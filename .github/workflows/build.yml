@@ -15,10 +15,12 @@ jobs:
           distribution: 'temurin'
       
       - name: Build with Gradle
+        env:
+          GRADLE_OPTS: -Xmx4g -Xms256m
         run: |
           chmod +x gradlew
           ./gradlew build --no-daemon
-
+      
       - name: List build output
         run: ls -la build/libs/
 
