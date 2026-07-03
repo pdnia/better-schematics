@@ -11,12 +11,6 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 minecraft {
     mappings channel: 'official', version: '1.21.1'
-    runs {
-        configureEach {
-            workingDir = layout.projectDirectory.dir('run')
-        }
-        register('client')
-    }
 }
 
 dependencies {
