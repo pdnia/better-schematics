@@ -1,7 +1,6 @@
 package com.betterschematics.schematic;
 
 import com.betterschematics.BetterSchematics;
-import com.betterschematics.config.BetterSchematicsConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtInputStream;
@@ -9,13 +8,16 @@ import net.minecraft.world.level.block.BlockState;
 
 import java.io.DataInputStream;
 import java.io.File;
-import apache.commons.compress.compressors.gzip;
 import java.io.IOException;
 import java.util.*;
+import java.io.ByteArrayOutputStream;
+import java.io.ByteArrayInputStream;
+import java.util.zip.GzIPInputStream;
 
 /**
  * Loads and holds a .litematic schematic with transforms and query methods.
- */public class SchematicData {
+ */
+public class SchematicData {
     private String name;
     private BlockPos enclosingSize;
     private List<RegionData> regions;
@@ -42,7 +44,7 @@ import java.util.*;
         BlockPos p = localPos;
         if (mirrorZ) p = new BlockPos(p.getX(), p.getY(), enclosingSize.getZ() - 1 - p.getZ());
         if (mirrorX) p = new BlockPos(enclosingSize.getX() - 1 - p.getX(), p.getY(), p.getZ());
-        switch (rotation) { case 90 -> p = new BlockPos(-p.getZ(), p.getY(), p.getX()); case 180 -> p = new BlockPos(-p.getX(), p.getY(), -p.getZ()); case 270 -> p = new BlockPos(p.getZ(), p.getY(), -p.getX()); }
+        switch (rotation) { case 90  -> p = new BlockPos(-p.getZ(), p.getY(), p.getX()); break; case 180 -> p = new BlockPos(-p.getX(), p.getY(), -p.getZ()); break; case 270 -> p = new BlockPos(p.getZ(), p.getY(), -p.getX()); break; }
         return p.offset(placementOffset);
     }
 
@@ -71,13 +73,20 @@ import java.util.*;
     public BlockPos getPlacementOffset() { return placementOffset; }
     public void setPlacementOffset(BlockPos o) { placementOffset = o; }
     public int getRotation() { return rotation; }
-    public void setRotation(int r) { rotation = ((r)%4 * 90 + 360) % 360; }
+    public void setRotation(int r) { rotation = ((r) % 4 * 90 + 360) % 360; }
     public boolean isMirrorX() { return mirrorX; }
     public void setMirrorX(boolean v) { mirrorX = v; }
     public boolean isMirrorZ() { return mirrorZ; }
     public void setMirrorZ(boolean v) { mirrorZ = v; }
     public List<RegionData> getRegions() { return regions; }
     public long getTotalBlocks() { return regions.stream().mapToLong(RegionData::getNonAirBlocks).sum(); }
-    public String getBuildDirection() { switch (rotation) { case 0  -> return mirrorX ? "W" : "E"; case 90  -> return mirrorX ? "N" : "S"; case 180 -> return mirrorX ? "E" : "W"; default: return mirrorX ? "S" : "N"; } }
+    public String getBuildDirection() {
+        switch (rotation) {
+            case 0:  return mirrorX ? "W" : "E";
+            case 90:  return mirrorX ? "N" : "S";
+            case 180: return mirrorX ? "E" : "W";
+            default: return mirrorX ? "S" : "N";
+        }
+    }
     public void rotate(boolean clockwise) { rotation = ((rotation/90 + (clockwise ? 1 : 3)) % 4) * 90; }
 }
