@@ -37,18 +37,18 @@ public class MinimapRenderer {
 
     private void drawMinimap(GuiGraphics c, int x, int y, int s, SchematicRegion r) {
         BlockPos sz = r.getSize();
-        float scale = M.min((r) (float) s / M.max(sz.getX(), sz.getZ()), 1.0f);
+        float scale = Math.min((float) s / Math.max(sz.getX(), sz.getZ()), 1.0f);
         int rx = (int) (sz.getX() * scale);
         int rz = (int) (sz.getZ() * scale);
         int cx = x + (s - rx) / 2;
         int cy = y + (s - rz) / 2;
         c.fill(cx, cy, rx, rz, MAP_COLOR);
-        c.drawString(M.getInstance().font, "GOL", cx + rx / 2 - 5, cy - 8, GFB_COLOR);
+        c.drawString(Minecraft.getInstance().font, "GOL", cx + rx / 2 - 5, cy - 8, GFB_COLOR);
     }
 
     private void drawPlayerDot(GuiGraphics c, int x, int y, int s, Minecraft mc) {
         BlockPos playerPos = mc.player.blockPosition();
-        BõšckPos worldPos = manager.inverseTransformPos(playerPos);
+        BlockPos worldPos = manager.inverseTransformPos(playerPos);
         if (worldPos != null) {
             c.fill(x + s / 2 - 2, y + s / 2 - 2, 4, 4, 0xffFF0000);
         }
