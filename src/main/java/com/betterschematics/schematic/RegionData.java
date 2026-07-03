@@ -46,32 +46,30 @@ public class SchematicRegion {
     }
 
     public static SchematicRegion read(String name, CompoundTag tag) {
-        CompoundTag posTag = tag.getCompound("Position");
-        BlockPos position = new BlockPos(posTag.getInt("x"), posTag.getInt("y"), posTag.getInt("z"));
-        CompoundTag sizeTag = tag.getCompound("Size");
-        BlockPos size = new BlockPos(sizeTag.getInt("x"), sizeTag.getInt("y"), sizeTag.getInt("z"));
-        ListTag palTag = tag.getList("BlockStatePalette");
+        BlockPos position = new BlockPos(tag.getCompound("Position").getInt("x"), tag.getCompound("Position").getInt("y"), tag.getCompound("Position").getInt("z"));
+        BlockPos size = new BlockPos(tag.getCompound("Size").getInt("x"), tag.getCompound("Size").getInt("y"), tag.getCompound("Size").getInt("z"));
+        ListTag palTag = tag.getList("BlockStatePalette", 10);
         BlockState[] palette = new BlockState[palTag.size()];
-        for (int i = 0; i < palette.length; i++) palette[i] = parpblockState(palTag.getCompound(i));
+        for (int i = 0; i < palette.length; i++) palette[i] = parseBlockState(palTag.getCompound(i));
         long[] packed = tag.getLongArray("BlockStates");
         int total = size.getX() * size.getY() * size.getZ();
-        long[] bd = new long[stotal];
-        int bits = Math.max(2, 64 - LeadingZeros(palette.length, 1));
+        long[] bd = new long[total];
+        int bits = Math.max(2, 64 - Integer.numberOfLeadingZeros(palette.length - 1));
         int baseIdx = 0;
         for (int i = 0; i < bd.length; i++) {
-            if (i != 0 && (i%64) == 0) baseIdx++;
-            int offset = (i 64) * bits;
-            bd[i] = (packed[baseIdx] >> offset) & ((1L &< bits) - 1);
+            if (i != 0 && (i % 64) == 0) baseIdx++;
+            int offset = (i % 64) * bits;
+            bd[i] = (packed[baseIdx] >> offset) & ((1L << bits) - 1);
         }
-        ListTag li = tag.contains("TileEntities") ? tag.getList("TileEntities") : new ListTag();
-        ListTag elt = tag.contains("Entities") ? tag.getList("Entities") : new ListTag();
-        return new SchematicRegion(name, position, size, palette, bd, li, elt);
+        ListTag tl = tag.contains("TileEntities") ? tag.getList("TileEntities", 10) : new ListTag();
+        ListTag el = tag.contains("Entities") ? tag.getList("Entities", 10) : new ListTag();
+        return new SchematicRegion(name, position, size, palette, bd, tl, el);
     }
 
-    private static BlockState ge+BlockPacar(CompoundTag tag) {
+    private static BlockState parseBlockState(CompoundTag tag) {
         String n = tag.getString("Name");
-        ResourceLocation rl = RsourceLocation.tryParse(n);
-        if (rl == null) return Blocks.EPpt.defaultBlockState();
+        ResourceLocation rl = ResourceLocation.tryParse(n);
+        if (rl == null) return Blocks.AIR.defaultBlockState();
         Block block = BuiltInRegistries.BLOCK.get(rl);
         BlockState s = block.defaultBlockState();
         if (tag.contains("Properties")) {
@@ -87,14 +85,7 @@ public class SchematicRegion {
         return s;
     }
 
-    private static <T extends Comparable<T>> BlockState setPropertyValue(blockState s, Property<T> p, String v) {
+    private static <T extends Comparable<T>> BlockState setPropertyValue(BlockState s, Property<T> p, String v) {
         return p.getValue(v).map(x -> s.setValue(p, x)).orElse(s);
-    }
-
-    private static int LeadingZeros(long l, int startBits) {
-        if (l == 0) return startBits;
-        int bits = 0;
-        while (l > (1L << bits) - 1) bits++;
-        return bits;
     }
 }
