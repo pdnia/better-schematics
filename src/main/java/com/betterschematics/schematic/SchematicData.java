@@ -1,180 +1,83 @@
 package com.betterschematics.schematic;
 
+import com.betterschematics.BetterSchematics;
+import com.betterschematics.config.BetterSchematicsConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtIo;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.nbt.NbtInputStream;
+import net.minecraft.world.level.block.BlockState;
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.File;
+import apache.commons.compress.compressors.gzip;
+import java.io.IOException;
 import java.util.*;
-import java.util.zip.GZIPInputStream;
 
 /**
- * Parsed .litematic schematic with regions and block data.
- */
-public class SchematicData {
-    public int minecraftDataVersion;
-    public String name = "Unnamed";
-    public String author = "Unknown";
-    public long totalBlocks;
-    public final List<SchematicRegion> regions = new ArrayList<>();
+ * Loads and holds a .litematic schematic with transforms and query methods.
+ */public class SchematicData {
+    private String name;
+    private BlockPos enclosingSize;
+    private List<RegionData> regions;
+    private BlockPos placementOffset;
+    private int rotation = 0;
+    private boolean mirrorX = false;
+    private boolean mirrorZ = false;
 
-    public SchematicRegion getMainRegion() {
-        return regions.isEmpty() ? null : regions.get(0);
-    }
+    public SchematicData() { regions = new ArrayList<>(); placementOffset = BlockPos.ZERO; }
 
-    public static SchematicData load(File file) throws IOException {
-        CompoundTag root;
-        try (DataInputStream dis = new DataInputStream(
-                new BufferedInputStream(
-                    new GZIPInputStream(new FileInputStream(file))))) {
-            root = NbtIo.read(dis);
-        }
-        SchematicData data = new SchematicData();
-        data.minecraftDataVersion = root.getInt("MinecraftDataVersion");
-        
-        if (root.contains("Metadata")) {
+    public boolean loadFromFile(File file) {
+        try (DataInputStream in = new DataInputStream(new GZIPInputStream(file))) {
+            CompoundTag root = NbtInputStream.readCompound(in);
             CompoundTag meta = root.getCompound("Metadata");
-            data.name = meta.getString("Name");
-            data.author = meta.getString("Author");
-            if (meta.contains("TotalBlocks")) data.totalBlocks = meta.getLong("TotalBlocks");
-        }
-        
-        if (root.contains("Regions")) {
-            CompoundTag regionsTag = root.getCompound("Regions");
-            for (String regionName : regionsTag.getAllKeys()) {
-                CompoundTag regionTag = regionsTag.getCompound(regionName);
-                data.regions.add(SchematicRegion.read(regionName, regionTag));
+            this.name = file.getName().replace(".litematic", "");
+            CompoundTag enclosing = meta.getCompound("EnclosingSize");this.enclosingSize = new BlockPos(enclosing.getInt("x"), enclosing.getInt("y"), enclosing.getInt("z"));
+            CompoundTag regions = meta.getCompound("Regions");
+            for (String key : regions.getAllKeys()) { this.regions.add(RegionData.read(key, regions.getCompound(key))); }
+            return true;
+        } catch (IOException e) { BetterSchematics.LOGGER.error("Failed to load schematic", e); return false; }
+    }
+
+    public BlockPos localToWorld(BlockPos localPos) {
+        BlockPos p = localPos;
+        if (mirrorZ) p = new BlockPos(p.getX(), p.getY(), enclosingSize.getZ() - 1 - p.getZ());
+        if (mirrorX) p = new BlockPos(enclosingSize.getX() - 1 - p.getX(), p.getY(), p.getZ());
+        switch (rotation) { case 90 -> p = new BlockPos(-p.getZ(), p.getY(), p.getX()); case 180 -> p = new BlockPos(-p.getX(), p.getY(), -p.getZ()); case 270 -> p = new BlockPos(p.getZ(), p.getY(), -p.getX()); }
+        return p.offset(placementOffset);
+    }
+
+    public BlockState getBlockState(BlockPos localPos) { for (RegionData r : regions) { BlockState s = r.getBlockState(localPos); if (s != null) return s; } return net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(); }
+    public BlockState getBlockStateAtWorld(BlockPos worldPos) { BlockPos local = worldPos.subtract(placementOffset); return getBlockState(local); }
+    public BlockPos worldToLocal(BlockPos worldPos) { return worldPos.subtract(placementOffset); }
+
+    public String exportMaterialList() {
+        Map<String, Long> map = new TreeMap<>();
+        for (RegionData r : regions) {
+            Map<BlockState, Long> m = new HashMap<>();
+            r.collectMaterials(m);
+            for (Map.Entry<BlockState, Long> e : m.entrySet()) {
+                String key = e.getKey().getBlock().getName().getString();
+                map.merge(key, e.getValue(), Long::sum);
             }
         }
-        return data;
+        StringBuilder sb = new StringBuilder();
+        map.entrySet().stream().sorted((a,b)->b.getValue().compareTo(a.getValue())).forEach(e -> sb.append(e.getKey()).append(" x ").append(e.getValue()).append("\n"));
+        return sb.toString();
     }
 
-    @Override
-    public String toString() {
-        return String.format("Schematic{name='%s', regions=%d}", name, regions.size());
-    }
-}
-
-/**
- * A single region within a .litematic file.
- */
-public class SchematicRegion {
-    public String name;
-    public int originX, originY, originZ;
-    public int width, height, length;
-    public long totalVolume;
-    public long nonAirBlocks;
-
-    /** Block states in YZX order: index = (y * length + z) * width + x */
-    public BlockState[] blocks;
-
-    public static SchematicRegion read(String name, CompoundTag tag) {
-        SchematicRegion r = new SchematicRegion();
-        r.name = name;
-        
-        CompoundTag pos = tag.getCompound("Position");
-        r.originX = pos.getInt("x");
-        r.originY = pos.getInt("y");
-        r.originZ = pos.getInt("z");
-        
-        CompoundTag sz = tag.getCompound("Size");
-        r.width = sz.getInt("x");
-        r.height = sz.getInt("y");
-        r.length = sz.getInt("z");
-        
-        r.totalVolume = (long) r.width * r.height * r.length;
-        
-        // Parse palette
-        var paletteList = tag.getList("BlockStatePalette", 10);
-        java.util.ArrayList<CompoundTag> palette = new java.util.ArrayList<>();
-        for (int i = 0; i < paletteList.size(); i++) {
-            palette.add(paletteList.getCompound(i));
-        }
-        
-        // Unpack block states
-        long[] packed = tag.getLongArray("BlockStates");
-        int totalBlocks = r.width * r.height * r.length;
-        r.blocks = unpackBlockStates(packed, totalBlocks, palette);
-        
-        long nonAir = 0;
-        for (BlockState bs : r.blocks) {
-            if (bs != null && !bs.isAir()) nonAir++;
-        }
-        r.nonAirBlocks = nonAir;
-        
-        return r;
-    }
-
-    private static BlockState[] unpackBlockStates(long[] packed, int totalBlocks, java.util.ArrayList<CompoundTag> palette) {
-        if (totalBlocks == 0 || packed.length == 0) return new BlockState[0];
-        
-        int bitsPerBlock = Math.max(2, 32 - Integer.numberOfLeadingZeros(palette.size() - 1));
-        long mask = (1L << bitsPerBlock) - 1;
-        
-        BlockState[] result = new BlockState[totalBlocks];
-        
-        for (int i = 0; i < totalBlocks; i++) {
-            int bitIndex = i * bitsPerBlock;
-            int arrayIndex = bitIndex / 64;
-            int bitOffset = bitIndex % 64;
-            
-            long value;
-            if (bitOffset + bitsPerBlock <= 64) {
-                value = (packed[arrayIndex] >>> bitOffset) & mask;
-            } else {
-                int bitsFromFirst = 64 - bitOffset;
-                int bitsFromSecond = bitsPerBlock - bitsFromFirst;
-                long first = (packed[arrayIndex] >>> bitOffset) & ((1L << bitsFromFirst) - 1);
-                long second = (arrayIndex + 1 < packed.length)
-                        ? (packed[arrayIndex + 1] & ((1L << bitsFromSecond) - 1))
-                        : 0;
-                value = first | (second << bitsFromFirst);
-            }
-            
-            int paletteIndex = (int) value;
-            if (paletteIndex >= 0 && paletteIndex < palette.size()) {
-                result[i] = parseBlockState(palette.get(paletteIndex));
-            }
-        }
-        
-        return result;
-    }
-
-    private static BlockState parseBlockState(CompoundTag tag) {
-        if (tag == null || !tag.contains("Name")) return Blocks.AIR.defaultBlockState();
-        String name = tag.getString("Name");
-        net.minecraft.resources.ResourceLocation rl = net.minecraft.resources.ResourceLocation.tryParse(name);
-        if (rl == null) return Blocks.AIR.defaultBlockState();
-        net.minecraft.world.level.block.Block block = net.minecraftforge.registries.ForgeRegistries.BLOCKS.getValue(rl);
-        if (block == null) return Blocks.AIR.defaultBlockState();
-        BlockState state = block.defaultBlockState();
-        if (tag.contains("Properties")) {
-            CompoundTag props = tag.getCompound("Properties");
-            for (String key : props.getAllKeys()) {
-                var property = block.getStateDefinition().getProperty(key);
-                if (property != null) {
-                    String val = props.getString(key);
-                    java.util.Optional<?> opt = property.getValue(val);
-                    if (opt.isPresent()) {
-                        state = setProperty(state, property, opt.get());
-                    }
-                }
-            }
-        }
-        return state;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T extends Comparable<T>> BlockState setProperty(BlockState state, net.minecraft.world.level.block.state.properties.Property<?> prop, Object value) {
-        return state.setValue((net.minecraft.world.level.block.state.properties.Property<T>) prop, (T) value);
-    }
-
-    public BlockState getBlock(int x, int y, int z) {
-        if (blocks == null) return null;
-        if (x < 0 || x >= width || y < 0 || y >= height || z < 0 || z >= length) return null;
-        int idx = (y * length + z) * width + x;
-        return (idx >= 0 && idx < blocks.length) ? blocks[idx] : null;
-    }
+    public String getName() { return name; }
+    public BlockPos getEnclosingSize() { return enclosingSize; }
+    public BlockPos getWorldSize() { return enclosingSize; }
+    public BlockPos getPlacementOffset() { return placementOffset; }
+    public void setPlacementOffset(BlockPos o) { placementOffset = o; }
+    public int getRotation() { return rotation; }
+    public void setRotation(int r) { rotation = ((r)%4 * 90 + 360) % 360; }
+    public boolean isMirrorX() { return mirrorX; }
+    public void setMirrorX(boolean v) { mirrorX = v; }
+    public boolean isMirrorZ() { return mirrorZ; }
+    public void setMirrorZ(boolean v) { mirrorZ = v; }
+    public List<RegionData> getRegions() { return regions; }
+    public long getTotalBlocks() { return regions.stream().mapToLong(RegionData::getNonAirBlocks).sum(); }
+    public String getBuildDirection() { switch (rotation) { case 0  -> return mirrorX ? "W" : "E"; case 90  -> return mirrorX ? "N" : "S"; case 180 -> return mirrorX ? "E" : "W"; default: return mirrorX ? "S" : "N"; } }
+    public void rotate(boolean clockwise) { rotation = ((rotation/90 + (clockwise ? 1 : 3)) % 4) * 90; }
 }
