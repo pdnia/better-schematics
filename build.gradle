@@ -32,7 +32,7 @@ repositories {
     mavenCentral()
 }
 
-dependences {
+dependencies {
     implementation minecraft.dependency('net.minecraftforge:forge:1.21.11-61.1.8')
 }
 
