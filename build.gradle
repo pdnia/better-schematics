@@ -1,6 +1,8 @@
 plugins {
-    id 'minecraftforge'
     id 'java'
+    id 'idea'
+    id 'eclipse'
+    id 'net.minecraftforge.gradle' version '[7.0.3,8)'
 }
 
 version = '0.3.0'
@@ -9,14 +11,44 @@ base.archivesName = 'betterschematics'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
 minecraft {
     mappings channel: 'official', version: '1.21.11'
+
+    runs {
+        configureEach {
+            workingDir = layout.projectDirectory.dir('run')
+        }
+        register('client')
+        register('server') { args '--nogui' }
+    }
 }
 
-dependencies {
-    minecraft 'net.minecraftforge:forge:1.21.11-61.1.8'
+repositories {
+    minecraft.mavenizer(it)
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+    mavenCentral()
+}
+
+dependences {
+    implementation minecraft.dependency('net.minecraftforge:forge:1.21.11-61.1.8')
 }
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+}
+
+jar {
+    manifest {
+        attributes([
+            "Specification-Title": "Better Schematics",
+            "Specification-Vendor": "BetterSchematics",
+            "Specification-Version": "1",
+            "Implementation-Title": project.name,
+            "Implementation-Version": project.version,
+            "Implementation-Vendor": "BetterSchematics"
+        ])
+    }
 }
