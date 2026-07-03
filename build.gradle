@@ -1,40 +1,31 @@
+buildscript {
+    repositories {
+        maven { url = 'https://maven.minecraftforge.net' }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath group: 'net.minecraftforge', name: 'forgegradle', version: '6.0.30', changing: true
+    }
+}
 plugins {
     id 'eclipse'
     id 'idea'
-    id 'net.minecraftforge.gradle' version '[7.0.3,8)'
 }
-
+apply plugin: 'net.minecraftforge.gradle'
 version = '0.3.0'
 group = 'com.betterschematics'
 base.archivesName = 'betterschematics'
-
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
-
 minecraft {
     mappings channel: 'official', version: '1.21.1'
     runs {
-        client {
-            workingDirectory project.file('run')
-        }
+        client { workingDirectory project.file('run') }
     }
 }
-
 dependencies {
     minecraft 'net.minecraftforge:forge:1.21.1-52.1.14'
 }
-
-tasks.named('processResources', ProcessResources).configure {
-    var replaceProperties = [
-            minecraft_version: '1.21.1',
-            forge_version: '52.1.14',
-            loader_version_range: '[52,)'
-    ]
-    inputs.properties replaceProperties
-    filesMatching(['META-INF/mods.toml']) {
-        expand replaceProperties + [project: project]
-    }
-}
-
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
