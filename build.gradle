@@ -1,6 +1,6 @@
 plugins {
+    id 'minecraftforge'
     id 'java'
-    id 'net.minecraftforge.gradle' version '[6.0.24,6.2)'
 }
 
 version = '0.3.0'
@@ -10,11 +10,11 @@ base.archivesName = 'betterschematics'
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 minecraft {
-    mappings channel: 'official', version: '1.21.1'
+    mappings channel: 'official', version: '1.21.11'
 }
 
 dependencies {
-    minecraft 'net.minecraftforge:forge:1.21.1-52.1.14'
+    minecraft 'net.minecraftforge:forge:1.21.11-61.1.8'
 }
 
 tasks.withType(JavaCompile).configureEach {
