@@ -17,14 +17,12 @@ jobs:
       - name: Build with Gradle
         run: |
           chmod +x gradlew
-          ./gradlew build --no-daemon 2>&1 | tee build.log
-      
-      - name: Show build log
-        if: failure()
-        run: cat build.log
+          ./gradlew build --no-daemon
+
+      - name: List build output
+        run: ls -la build/libs/
 
       - name: Upload Artifact
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: BetterSchematic
