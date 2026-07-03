@@ -17,11 +17,11 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: 8.10.2
+          gradle-version: 9.3.0
       
       - name: Build with Gradle
         env:
-          GRADLE_OPTS: -Xmx4g -Xms256m
+          GRABLE_OPTS: -Xmx4g -Xms256m
         run: gradle build --no-daemon
       
       - name: List build output
