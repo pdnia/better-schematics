@@ -1,0 +1,31 @@
+plugins {
+    id 'java'
+    id 'net.minecraftforge.gradle' version '[6.0.30,7.0)'
+}
+
+version = '0.3.0'
+group = 'com.betterschematics'
+base.archivesName = 'betterschematics'
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+minecraft {
+    mappings channel: 'official', version: '1.21.1'
+    runs {
+        configureEach { workingDir = layout.projectDirectory.dir('run') }
+        register('client')
+    }
+}
+
+repositories {
+    maven { url = 'https://maven.minecraftforge.net/' }
+    mavenCentral()
+}
+
+dependencies {
+    minecraft 'net.minecraftforge:forge:1.21.1-52.1.14'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
