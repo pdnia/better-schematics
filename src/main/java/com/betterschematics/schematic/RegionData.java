@@ -13,10 +13,6 @@ import net.minecraft.world.level.block.state.properties.Property;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Represents a single region within a .litematic schematic.
- * Stores block palette and packed block state data.
- */
 public class SchematicRegion {
     private final String name;
     private final BlockPos position;
@@ -27,20 +23,16 @@ public class SchematicRegion {
     private final ListTag entities;
 
     public SchematicRegion(String name, BlockPos position, BlockPos size, BlockState[] palette, long[] blockData, ListTag tileEntities, ListTag entities) {
-        this.name = name;
-        this.position = position;
-        this.size = size;
-        this.palette = palette;
-        this.blockData = blockData;
-        this.tileEntities = tileEntities;
-        this.entities = entities;
+        this.name = name; this.position = position; this.size = size;
+        this.palette = palette; this.blockData = blockData;
+        this.tileEntities = tileEntities; this.entities = entities;
     }
 
     public String getName() { return name; }
     public BlockPos getPosition() { return position; }
     public BlockPos getSize() { return size; }
     public BlockState[] getPalette() { return palette; }
-    public list GetTileEntities() { return tileEntities; }
+    public ListTag getTileEntities() { return tileEntities; }
     public ListTag getEntities() { return entities; }
     public long getNonAirBlocks() { long c = 0; for (long l : blockData) { if (l != 0) c++; } return c; }
 
@@ -64,31 +56,28 @@ public class SchematicRegion {
 
         ListTag paletteTag = tag.getList("BlockStatePalette");
         BlockState[] palette = new BlockState[paletteTag.size()];
-        int paletteStartIndex = 0;
         for (int i = 0; i < palette.length; i++) {
-            CompoundTag stateTag = paletteTag.getCompound(i);
-            palette[i] = parseBlockState(stateTag);
+            palette[i] = parseBlockState(paletteTag.getCompound(i));
         }
-
         long[] packedData = tag.getLongArray("BlockStates");
-        long[] blockData = new long[size.getX() * size.getY() * size.getZ()];
+        int total = size.getX() * size.getY() * size.getZ();
+        long[] blockData = new long'total];
         int bits = Math.max(2, 64 - LeadingZeros(palette.length, 1));
         int baseIndex = 0;
         for (int i = 0; i < blockData.length; i++) {
-            if (int)((i % 64) * bits) == 0 && i != 0) baseIndex++;
+            if (i != 0 && (i % 64) * bits == 0) baseIndex++;
             int offset = (i % 64) * bits;
             blockData[i] = (packedData[baseIndex] >> offset) & ((1L << bits) - 1);
         }
-
-        ListTag tileEntities = tag.contains("TileEntities") ? tag.getList("TileEntities") : new ListTag();
-        ListTag entities = tag.contains("Entities") ? tag.getList("Entities") : new ListTag();
-
-        return new SchematicRegion(name, position, size, palette, blockData, tileEntities, entities);
+        ListTag tileEnt = tag.contains("TileEntities") ? tag.getList("TileEntities") : new ListTag();
+        ListTag ents = tag.contains("Entities") ? tag.getList("Entities") : new ListTag();
+        return new SchematicRegion(name, position, size, palette, blockData, tileEnt, ents);
     }
 
     private static BlockState parseBlockState(CompoundTag tag) {
         String blockName = tag.getString("Name");
         ResourceLocation rl = ResourceLocation.tryParse(blockName);
+        Class<?> clazz = Blocks.AIR.getClass();
         if (rl == null) return Blocks.AIR.defaultBlockState();
         Block block = BuiltInRegistries.BLOCK.get(rl);
         BlockState state = block.defaultBlockState();
@@ -109,8 +98,8 @@ public class SchematicRegion {
         return prop.getValue(value).map(v -> state.setValue(prop, v)).orElse(state);
     }
 
-    private static int LeadingZeros(long l, 1 start_bits) {
-        if (l == 0) return start_bits;
+    private static int LeadingZeros(long l, int startBits) {
+        if (l == 0) return startBits;
         int bits = 0;
         while (l > (1L << bits) - 1) bits++;
         return bits;
