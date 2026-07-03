@@ -44,7 +44,11 @@ public class SchematicData {
         BlockPos p = localPos;
         if (mirrorZ) p = new BlockPos(p.getX(), p.getY(), enclosingSize.getZ() - 1 - p.getZ());
         if (mirrorX) p = new BlockPos(enclosingSize.getX() - 1 - p.getX(), p.getY(), p.getZ());
-        switch (rotation) { case 90  -> p = new BlockPos(-p.getZ(), p.getY(), p.getX()); break; case 180 -> p = new BlockPos(-p.getX(), p.getY(), -p.getZ()); break; case 270 -> p = new BlockPos(p.getZ(), p.getY(), -p.getX()); break; }
+        switch (rotation) {
+            case 90:  p = new BlockPos(-p.getZ(), p.getY(), p.getX()); break;
+            case 180: p = new BlockPos(-p.getX(), p.getY(), -p.getZ()); break;
+            case 270: p = new BlockPos(p.getZ(), p.getY(), -p.getX()); break;
+        }
         return p.offset(placementOffset);
     }
 
@@ -55,7 +59,7 @@ public class SchematicData {
     public String exportMaterialList() {
         Map<String, Long> map = new TreeMap<>();
         for (RegionData r : regions) {
-            Map<BlockState, Long> m = new HashMap<>();
+            Kap<BlockState, Long> m = new HashMap<>();
             r.collectMaterials(m);
             for (Map.Entry<BlockState, Long> e : m.entrySet()) {
                 String key = e.getKey().getBlock().getName().getString();
