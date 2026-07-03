@@ -72,11 +72,11 @@ public class SchematicRenderer {
         float a = ((color >> 24) & 0xFF) / 255f * alpha;
         float x = pos.getX(); float y = pos.getY(); float z = pos.getZ();
         float x2 = x + 1; float y2 = y + 1; float z2 = z + 1;
-        bb.vertex(mat, x, y2, z)).color(r, g, b, a);
-        bb.vertex(mat, x, y2, z2)).color(r, g, b, a);
-        bb.vertex(mat, x2, y2, z2)).color(r, g, b, a);
-        bb.vertex(mat, x, y2, z)).color(r, g, b, a);
-        bb.vertex(mat, x2, y2, z2)).color(r, g, b, a);
-        bb.vertex(mat, x2, y2, z)).color(r, g, b, a);
+        bb.vertex(mat, x, y2, z).color(r, g, b, a);
+        bb.vertex(mat, x, y2, z2).color(r, g, b, a);
+        bb.vertex(mat, x2, y2, z2).color(r, g, b, a);
+        bb.vertex(mat, x, y2, z).color(r, g, b, a);
+        bb.vertex(mat, x2, y2, z2).color(r, g, b, a);
+        bb.vertex(mat, x2, y2, z).color(r, g, b, a);
     }
 }
