@@ -4,7 +4,19 @@ pluginManagement {
         maven { url = 'https://maven.minecraftforge.net/' }
     }
 }
+
+buildscript {
+    repositories {
+        maven { url = 'https://maven.minecraftforge.net/' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'net.minecraftforge', name: 'forgegradle', version: '6.0.30', changing: true
+    }
+}
+
 plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
 }
+
 rootProject.name = 'betterschematics'
