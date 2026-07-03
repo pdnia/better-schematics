@@ -1,17 +1,9 @@
-buildscript {
-    repositories {
-        maven { name = 'Forge'; url = 'https://maven.minecraftforge.net' }
-        maven { name = 'Mojang'; url = 'https://libraries.minecraft.net/' }
-        mavenCentral()
-    }
-    dependencies {
-        classpath group: 'net.minecraftforge', name: 'forgegradle', version: '7+', changing: true
-    }
+plugins {
+    id 'java'
+    id 'eclipse'
+    id 'idea'
+    id 'net.minecraftforge.gradle' version '[7.0.3,8)'
 }
-
-apply plugin: 'eclipse'
-apply plugin: 'idea'
-apply plugin: 'net.minecraftforge.gradle'
 
 version = '0.3.0'
 group = 'com.betterschematics'
@@ -19,19 +11,48 @@ base.archivesName = 'betterschematics'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
 minecraft {
     mappings channel: 'official', version: '1.21.1'
+
     runs {
-        client {
-            workingDirectory project.file('run')
+        configureEach {
+            workingDir = layout.projectDirectory.dir('run')
+        }
+
+        register('client')
+
+        register('server') {
+            args '--nogui'
         }
     }
 }
 
+repositories {
+    minecraft.mavenizer(it)
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+    mavenCentral()
+}
+
 dependencies {
-    minecraft 'net.minecraftforge:forge:1.21.1-52.1.14'
+    implementation minecraft.dependency('net.minecraftforge:forge:1.21.1-52.1.14')
 }
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+}
+
+jar {
+    manifest {
+        attributes([
+            "Specification-Title": "Better Schematics",
+            "Specification-Vendor": "BetterSchematics",
+            "Specification-Version": "1",
+            "Implementation-Title": project.name,
+            "Implementation-Version": project.version,
+            "Implementation-Vendor": "BetterSchematics"
+        ])
+    }
 }
