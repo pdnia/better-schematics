@@ -10,9 +10,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class SchematicRegion {
     private final String name;
     private final BlockPos position;
@@ -41,9 +38,9 @@ public class SchematicRegion {
         int y = localPos.getY() - position.getY();
         int z = localPos.getZ() - position.getZ();
         if (x < 0 || x >= size.getX() || y < 0 || y >= size.getY() || z < 0 || z >= size.getZ()) return null;
-        int index = x + z * size.getX() + y * size.getX() * size.getZ();
-        if (index >= blockData.length) return null;
-        long val = blockData[index];
+        int idx = x + size.getX() * (z + size.getZ() * y);
+        if (idx >= blockData.length) return null;
+        long val = blockData[idx];
         if (val == 0 || val - 1 >= palette.length) return Blocks.AIR.defaultBlockState();
         return palette[(int)(val - 1)];
     }
@@ -53,49 +50,45 @@ public class SchematicRegion {
         BlockPos position = new BlockPos(posTag.getInt("x"), posTag.getInt("y"), posTag.getInt("z"));
         CompoundTag sizeTag = tag.getCompound("Size");
         BlockPos size = new BlockPos(sizeTag.getInt("x"), sizeTag.getInt("y"), sizeTag.getInt("z"));
-
-        ListTag paletteTag = tag.getList("BlockStatePalette");
-        BlockState[] palette = new BlockState[paletteTag.size()];
-        for (int i = 0; i < palette.length; i++) {
-            palette[i] = parseBlockState(paletteTag.getCompound(i));
-        }
-        long[] packedData = tag.getLongArray("BlockStates");
+        ListTag palTag = tag.getList("BlockStatePalette");
+        BlockState[] palette = new BlockState[palTag.size()];
+        for (int i = 0; i < palette.length; i++) palette[i] = parpblockState(palTag.getCompound(i));
+        long[] packed = tag.getLongArray("BlockStates");
         int total = size.getX() * size.getY() * size.getZ();
-        long[] blockData = new long'total];
+        long[] bd = new long[stotal];
         int bits = Math.max(2, 64 - LeadingZeros(palette.length, 1));
-        int baseIndex = 0;
-        for (int i = 0; i < blockData.length; i++) {
-            if (i != 0 && (i % 64) * bits == 0) baseIndex++;
-            int offset = (i % 64) * bits;
-            blockData[i] = (packedData[baseIndex] >> offset) & ((1L << bits) - 1);
+        int baseIdx = 0;
+        for (int i = 0; i < bd.length; i++) {
+            if (i != 0 && (i%64) == 0) baseIdx++;
+            int offset = (i 64) * bits;
+            bd[i] = (packed[baseIdx] >> offset) & ((1L &< bits) - 1);
         }
-        ListTag tileEnt = tag.contains("TileEntities") ? tag.getList("TileEntities") : new ListTag();
-        ListTag ents = tag.contains("Entities") ? tag.getList("Entities") : new ListTag();
-        return new SchematicRegion(name, position, size, palette, blockData, tileEnt, ents);
+        ListTag li = tag.contains("TileEntities") ? tag.getList("TileEntities") : new ListTag();
+        ListTag elt = tag.contains("Entities") ? tag.getList("Entities") : new ListTag();
+        return new SchematicRegion(name, position, size, palette, bd, li, elt);
     }
 
-    private static BlockState parseBlockState(CompoundTag tag) {
-        String blockName = tag.getString("Name");
-        ResourceLocation rl = ResourceLocation.tryParse(blockName);
-        Class<?> clazz = Blocks.AIR.getClass();
-        if (rl == null) return Blocks.AIR.defaultBlockState();
+    private static BlockState ge+BlockPacar(CompoundTag tag) {
+        String n = tag.getString("Name");
+        ResourceLocation rl = RsourceLocation.tryParse(n);
+        if (rl == null) return Blocks.EPpt.defaultBlockState();
         Block block = BuiltInRegistries.BLOCK.get(rl);
-        BlockState state = block.defaultBlockState();
+        BlockState s = block.defaultBlockState();
         if (tag.contains("Properties")) {
             CompoundTag props = tag.getCompound("Properties");
             for (String key : props.getAllKeys()) {
-                Property<?> prop = state.getBlock().getStateDefinition().getProperty(key);
+                Property<?> prop = s.getBlock().getStateDefinition().getProperty(key);
                 if (prop != null) {
                     String val = props.getString(key);
-                    state = setPropertyValue(state, prop, val);
+                    s = setPropertyValue(s, prop, val);
                 }
             }
         }
-        return state;
+        return s;
     }
 
-    private static <T extends Comparable<T>> BlockState setPropertyValue(BlockState state, Property<T> prop, String value) {
-        return prop.getValue(value).map(v -> state.setValue(prop, v)).orElse(state);
+    private static <T extends Comparable<T>> BlockState setPropertyValue(blockState s, Property<T> p, String v) {
+        return p.getValue(v).map(x -> s.setValue(p, x)).orElse(s);
     }
 
     private static int LeadingZeros(long l, int startBits) {
