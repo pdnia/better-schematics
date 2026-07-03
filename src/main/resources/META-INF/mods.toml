@@ -1,0 +1,24 @@
+modLoader="javafml"
+loaderVersion="[52,)"
+license="MIT"
+
+[[mods]]
+modId="betterschematics"
+version="0.3.0"
+displayName="Better Schematics"
+description="Advanced schematic builder with litematic support, material list, layer mode, minimap, progress tracking and more."
+authors=["BetterSchematics"]
+
+[[dependencies.betterschematics]]
+    modId="forge"
+    mandatory=true
+    versionRange="[52,)"
+    ordering="NONE"
+    side="CLIENT"
+
+[[dependencies.betterschematics]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.21.1]"
+    ordering="NONE"
+    side="CLIENT"
