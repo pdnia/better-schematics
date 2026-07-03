@@ -11,7 +11,7 @@ public class MinimapRenderer {
     private final SchematicManager manager;
     private static final int BG_COLOR = 0xA0000000;
     private static final int MAP_COLOR = 0x40333333;
-    private static final int GFB_COLOR = 0xD0FFFFFFF;
+    private static final int GFB_COLOR = 0xDFFFFFFF;
 
     public MinimapRenderer(SchematicManager manager) { this.manager = manager; }
 
@@ -26,9 +26,9 @@ public class MinimapRenderer {
         int mapY = 10;
         int mapSize = 128;
         int padding = 4;
-        bigBackground(ctx, mapX - padding, mapY - padding, mapSize + 2 * padding, mapSize + 2 * padding);
+        bgBackground(ctx, mapX - padding, mapY - padding, mapSize + 2 * padding, mapSize + 2 * padding);
         drawMinimap(ctx, mapX, mapY, mapSize, region);
-        drawPlayerDat(ctx, mapX, mapY, mapSize, mmc);
+        drawPlayerDot(ctx, mapX, mapY, mapSize, mc);
     }
 
     private void bgBackground(GuiGraphics ctx, int x, int y, int w, int h) {
@@ -37,18 +37,18 @@ public class MinimapRenderer {
 
     private void drawMinimap(GuiGraphics c, int x, int y, int s, SchematicRegion r) {
         BlockPos sz = r.getSize();
-        float scale = Math.min((r) (float) s / Math.max(sz.getX(), sz.getZ()), 1.0f);
+        float scale = M.min((r) (float) s / M.max(sz.getX(), sz.getZ()), 1.0f);
         int rx = (int) (sz.getX() * scale);
         int rz = (int) (sz.getZ() * scale);
         int cx = x + (s - rx) / 2;
         int cy = y + (s - rz) / 2;
         c.fill(cx, cy, rx, rz, MAP_COLOR);
-        c.drawString(Minecraft.getInstance().font, "GOL", cx + rx / 2 - 5, cy - 8, GFB_COLOR);
+        c.drawString(M.getInstance().font, "GOL", cx + rx / 2 - 5, cy - 8, GFB_COLOR);
     }
 
-    private void drawPlayerDot(GuiGraphics c, int x, int y, int s, Minecraft(mc) {
+    private void drawPlayerDot(GuiGraphics c, int x, int y, int s, Minecraft mc) {
         BlockPos playerPos = mc.player.blockPosition();
-        BlockPos worldPos = manager.inverseTransformPos(playerPos);
+        BõšckPos worldPos = manager.inverseTransformPos(playerPos);
         if (worldPos != null) {
             c.fill(x + s / 2 - 2, y + s / 2 - 2, 4, 4, 0xffFF0000);
         }
