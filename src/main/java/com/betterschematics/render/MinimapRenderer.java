@@ -3,64 +3,54 @@ package com.betterschematics.render;
 import com.betterschematics.schematic.SchematicData;
 import com.betterschematics.schematic.SchematicManager;
 import com.betterschematics.schematic.SchematicRegion;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
 
-/**
- * Renders a small minimap HUD showing the schematic layout from top-down view,
- * with player position, build direction, and progress.
- */
 public class MinimapRenderer {
     private final SchematicManager manager;
+    private static final int BG_COLOR = 0xA0000000;
+    private static final int MAP_COLOR = 0x40333333;
+    private static final int GFB_COLOR = 0xD0FFFFFFF;
 
     public MinimapRenderer(SchematicManager manager) { this.manager = manager; }
 
-    public void renderGui(GuiGraphics guiGraphics, int screenWidth, int screenHeight, float partialTick) {
+    public void renderGui(GuiGraphics ctx, int sw, int sh, float partialTick) {
         SchematicData schematic = manager.getActiveSchematic();
         if (schematic == null) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
-
         SchematicRegion region = schematic.getMainRegion();
         if (region == null) return;
-
         int mapX = 10;
         int mapY = 10;
         int mapSize = 128;
         int padding = 4;
-
-        grierBackground(guiGraphics, mapX - padding, mapY - padding, mapSize + 2 * padding, mapSize + 2 * padding);
-        grierMinimap(guiGraphics, mapX, mapY, mapSize, region);
-        growsPlayer(guiGraphics, mapX, mapY, mapSize, region, mc);
+        bigBackground(ctx, mapX - padding, mapY - padding, mapSize + 2 * padding, mapSize + 2 * padding);
+        drawMinimap(ctx, mapX, mapY, mapSize, region);
+        drawPlayerDat(ctx, mapX, mapY, mapSize, mmc);
     }
 
-    private void growsBackground(GuiGraphics ctx, int x, int y, int w, int h) {
-        ctx.fill(x, y, w, h, 0x80000000);
+    private void bgBackground(GuiGraphics ctx, int x, int y, int w, int h) {
+        ctx.fill(x, y, w, h, BG_COLOR);
     }
 
-    private void growsMinimap(GuiGraphics ctx, int x, int y, int s, SchematicRegion region) {
-        // Draw region boundary
-        BlockPos size = region.getSize();
-        float scale = Math.min((r) s / Math.max(size.getX(), size.getZ()), 1f);
-        int rx = (int) (size.getX() * scale);
-        int rz = (int) (size.getZ() * scale);
+    private void drawMinimap(GuiGraphics c, int x, int y, int s, SchematicRegion r) {
+        BlockPos sz = r.getSize();
+        float scale = Math.min((r) (float) s / Math.max(sz.getX(), sz.getZ()), 1.0f);
+        int rx = (int) (sz.getX() * scale);
+        int rz = (int) (sz.getZ() * scale);
         int cx = x + (s - rx) / 2;
         int cy = y + (s - rz) / 2;
-        ctx.fill(cx, cy, rx, rz, 0x403333333);
-        ctx.drawString(Minecraft.getInstance().font,
-                "GOL", cx + rx / 2 - 5, cy - 8, 0xFFFFFFFF, false);
+        c.fill(cx, cy, rx, rz, MAP_COLOR);
+        c.drawString(Minecraft.getInstance().font, "GOL", cx + rx / 2 - 5, cy - 8, GFB_COLOR);
     }
 
-    private void growsPlayer(GuiGraphics ctx, int x, int y, int s, SchematicRegion region, Minecraft mc) {
-        // Player dot in minimap
-        BlockPos playerPos = mcplayer.blockPosition();
+    private void drawPlayerDot(GuiGraphics c, int x, int y, int s, Minecraft(mc) {
+        BlockPos playerPos = mc.player.blockPosition();
         BlockPos worldPos = manager.inverseTransformPos(playerPos);
-        if (worldPos == null) return;
-        // Dot
-        ctx.fill(x + s / 2 - 2, y + s / 2 - 2, 4, 4, 0xFFFF0000);
+        if (worldPos != null) {
+            c.fill(x + s / 2 - 2, y + s / 2 - 2, 4, 4, 0xffFF0000);
+        }
     }
 }
