@@ -1,0 +1,7 @@
+{
+    "pack": {
+        "description": "Better Schematics mod resources",
+        "pack_format": 18,
+        "supports_between_inclusive": [15, 20]
+    }
+}
