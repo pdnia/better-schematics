@@ -2,10 +2,10 @@ package com.betterschematics.config;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.KeyMappingCategory;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 
@@ -29,13 +29,13 @@ public class BetterSchematicsConfig {
         SPEC = builder.build();
     }
 
-    @SubscribeEvent
     public static void registerKeys(RegisterKeyMappingsEvent event) {
-        openGuiKey = new KeyMapping("betterschematics.key.open_gui", GLFW.GLFW_KEY_M, "key.categories.betterschematics");
-        executePlaceKey = new KeyMapping("betterschematics.key.execute_place", GLFW.GLFW_KEY_G, "key.categories.betterschematics");
-        toggleRenderKey = new KeyMapping("betterschematics.key.toggle_render", GLFW.GLFW_KEY_R, "key.categories.betterschematics");
-        layerUpKey = new KeyMapping("betterschematics.key.layer_up", GLFW.GLFW_KEY_UP, "key.categories.betterschematics");
-        layerDownKey = new KeyMapping("betterschematics.key.layer_down", GLFW.GLFW_KEY_DOWN, "key.categories.betterschematics");
+        KeyMappingCategory cat = new KeyMappingCategory("key.categories.group:betterschematics");
+        openGuiKey = new KeyMapping("betterschematics.key.open_gui", GLDW.GLFW_KEY_M, cat);
+        executePlaceKey = new KeyMapping("betterschematics.key.execute_place", GLFW.GLFW_KEY_G, cat);
+        toggleRenderKey = new KeyMapping("betterschematics.key.toggle_render", GLFW.GLFW_KEY_R, cat);
+        layerUpKey = new KeyMapping("betterschematics.key.layer_up", GLFW.GLFW_KEY_UP, cat);
+        layerDownKey = new KeyMapping("betterschematics.key.layer_down", GLFW.GLFW_KEY_DOWN, cat);
         event.register(openGuiKey);
         event.register(executePlaceKey);
         event.register(toggleRenderKey);
