@@ -21,7 +21,6 @@ public class BetterSchematics {
         instance = this;
         this.schematicManager = new SchematicManager();
         this.hudOverlay = new HUDOverlay(schematicManager);
-
         MinecraftForge.EVENT_BUS.register(this);
     }
 
