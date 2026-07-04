@@ -2,38 +2,50 @@ plugins {
     id 'java'
     id 'idea'
     id 'eclipse'
-    id 'net.minecraftforge.gradle' version '[7.0.3,8)'
+    id 'maven-publish'
+    id 'net.minecraftforge.gradle' version '[7.0.29,8)'
 }
 
-version = '0.3.0'
-group = 'com.betterschematics'
-base.archivesName = 'betterschematics'
+version = mod_version
+group = mod_group_id
+
+base {
+    archivesName = mod_id
+}
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
-sourceSets.main.resources { srcDir 'src/generated/resources' }
-
 minecraft {
-    mappings channel: 'official', version: '1.21.11'
+    mappings channel: mapping_channel, version: mapping_version
 
     runs {
         configureEach {
             workingDir = layout.projectDirectory.dir('run')
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            systemProperty 'forge.logging.console.level', 'debug'
         }
-        register('client')
-        register('server') { args '--nogui' }
+
+        client {
+            systemProperty 'forge.enabledGameTestNamespaces', mod_id
+        }
+
+        server {
+            systemProperty 'forge.enabledGameTestNamespaces', mod_id
+            args '--nogui'
+        }
     }
 }
 
 repositories {
-    minecraft.mavenizer(it)
-    maven fg.forgeMaven
-    maven fg.minecraftLibsMaven
+    maven {
+        name = 'MinecraftForge'
+        url = 'https://maven.minecraftforge.net/'
+    }
     mavenCentral()
 }
 
 dependencies {
-    implementation minecraft.dependency('net.minecraftforge:forge:1.21.11-61.1.8')
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 }
 
 tasks.withType(JavaCompile).configureEach {
