@@ -9,7 +9,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
-import java.util.Optional;
 
 public class SchematicRegion {
     public final String name;
@@ -71,7 +70,7 @@ public class SchematicRegion {
         String n = tag.getString("Name").orElse("");
         Identifier rl = Identifier.tryParse(n);
         if (rl == null) return Blocks.AIR.defaultBlockState();
-        Block block = BuiltInRegistries.BLOCK.get(rl).orElse(null);
+        Block block = BuiltInRegistries.BLOCK.getValue(rl);
         if (block == null) return Blocks.AIR.defaultBlockState();
         BlockState s = block.defaultBlockState();
         if (tag.contains("Properties")) {
