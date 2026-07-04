@@ -6,7 +6,7 @@ import com.betterschematics.schematic.SchematicManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderGuiLayerEvent;
+import net.minecraftforge.client.event.RenderGuiEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -15,7 +15,7 @@ public class SchematicOverlay {
     private static final Minecraft mc = Minecraft.getInstance();
 
     @SubscribeEvent
-    public static void onRenderOverlay(RenderGuiLayerEvent.Post event) {
+    public static void onRenderOverlay(RenderGuiEvent.Post event) {
         if (mc.player == null || mc.level == null) return;
         BetterSchematics mod = BetterSchematics.getInstance();
         if (mod == null) return;
