@@ -1,55 +1,48 @@
 package com.betterschematics.schematic;
 
-import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
-
-import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.zip.GZIPInputStream;
 
-/**
- * Parsed .litematic schematic with regions and block data.
- */
 public class SchematicData {
-    public int minecraftDataVersion;
-    public String name = "Unnamed";
+    public String name = "Unknown";
     public String author = "Unknown";
+    public int minecraftDataVersion;
     public long totalBlocks;
-    public final List<SchematicRegion> regions = new ArrayList<>();
+    public List<SchematicRegion> regions = new ArrayList<>();
 
     public SchematicRegion getMainRegion() {
         return regions.isEmpty() ? null : regions.get(0);
     }
 
     public static SchematicData load(File file) throws IOException {
-        CompoundTag root;
-        try (DataInputStream dis = new DataInputStream(new BufferedInputStream(new GZIPInputStream(new FileInputStream(file))))) {
-            root = NbtIo.read(dis);
-        }
+        DataInputStream dis = new DataInputStream(new FileInputStream(file));
+        CompoundTag root = NbtIo.readCompressed(dis, NbtAccounter.unlimitedHeap());
+        dis.close();
         SchematicData data = new SchematicData();
-        data.minecraftDataVersion = root.getInt("MinecraftDataVersion");
+        data.minecraftDataVersion = root.getInt("MinecraftDataVersion").orElse(0);
         if (root.contains("Metadata")) {
-            CompoundTag meta = root.getCompound("Metadata");
-            data.name = meta.getString("Name");
-            data.author = meta.getString("Author");
+            CompoundTag meta = root.getCompound("Metadata").orElse(new CompoundTag());
+            data.name = meta.getString("Name").orElse("Unknown");
+            data.author = meta.getString("Author").orElse("Unknown");
         }
         if (root.contains("Regions")) {
-            CompoundTag regionsTag = root.getCompound("Regions");
+            CompoundTag regionsTag = root.getCompound("Regions").orElse(new CompoundTag());
             for (String key : regionsTag.getAllKeys()) {
-                CompoundTag regionTag = regionsTag.getCompound(key);
-                SchematicRegion region = SchematicRegion.read(key, regionTag);
-                data.regions.add(region);
+                CompoundTag regionTag = regionsTag.getCompound(key).orElse(null);
+                if (regionTag != null) {
+                    data.regions.add(SchematicRegion.read(key, regionTag));
+                }
             }
         }
-        data.totalBlocks = root.getLong("TotalBlocks");
+        data.totalBlocks = root.getLong("TotalBlocks").orElse(0L);
         return data;
     }
 }

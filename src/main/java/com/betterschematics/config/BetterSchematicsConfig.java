@@ -2,10 +2,10 @@ package com.betterschematics.config;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
-import net.minecraftforge.api.dist.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.eventbus.api.listener.SubscribeEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 
@@ -13,8 +13,6 @@ import org.lwjgl.glfw.GLFW;
 public class BetterSchematicsConfig {
 
     public static final ForgeConfigSpec SPEC;
-    public static final ForgeConfigSpec.DoubleValue RENDER_DISTANCE;
-    public static final ForgeConfigSpec.DoubleValue RENDER_ALPHA;
     public static final ForgeConfigSpec.BooleanValue SHOW_MINIMAP;
     public static final ForgeConfigSpec.BooleanValue SHOW_MATERIAL_LIST;
 
@@ -26,12 +24,8 @@ public class BetterSchematicsConfig {
 
     static {
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
-        builder.push("Render");
-        RENDER_DISTANCE = builder.comment("Maximum render distance for schematic overlay (blocks)").defineInRange("renderDistance", 256.0, 16.0, 1024.0);
-        RENDER_ALPHA = builder.comment("Opacity of the schematic overlay (0.0-1.0)").defineInRange("renderAlpha", 0.4, 0.0, 1.0);
-        SHOW_MINIMAP = builder.comment("Show minimap with build direction").define("showMinimap", true);
-        SHOW_MATERIAL_LIST = builder.comment("Show material list in HUD").define("showMaterialList", true);
-        builder.pop();
+        SHOW_MINIMAP = builder.comment("Show minimap overlay").define("showMinimap", true);
+        SHOW_MATERIAL_LIST = builder.comment("Show material list").define("showMaterialList", true);
         SPEC = builder.build();
     }
 

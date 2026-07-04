@@ -1,19 +1,12 @@
 package com.betterschematics.schematic;
 
-import com.betterschematics.BetterSchematics;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.registries.ForgeRegistries;
-
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class SchematicManager {
     private SchematicData schematic;
@@ -49,7 +42,8 @@ public class SchematicManager {
     public boolean loadSchematic(File file) {
         try {
             schematic = SchematicData.load(file);
-            placementOrigin = new BlockPos((int)Minecraft.getInstance().player.getX(), (int)Minecraft.getInstance().player.getY(), (int)Minecraft.getInstance().player.getZ());
+            Minecraft mc = Minecraft.getInstance();
+            placementOrigin = new BlockPos((int)mc.player.getX(), (int)mc.player.getY(), (int)mc.player.getZ());
             progressTracker.setSchematic(schematic);
             return true;
         } catch (IOException e) { return false; }
@@ -68,8 +62,8 @@ public class SchematicManager {
         if (schematic != null) {
             SchematicRegion r = schematic.getMainRegion();
             if (r != null) {
-                currentLayerMin = Math.min(currentLayerMin + 1, r.getSize().getY() - 1);
-                currentLayerMax = Math.min(currentLayerMax + 1, r.getSize().getY() - 1);
+                currentLayerMin = Math.min(currentLayerMin + 1, r.size.getY() - 1);
+                currentLayerMax = Math.min(currentLayerMax + 1, r.size.getY() - 1);
             }
         }
     }
@@ -84,7 +78,7 @@ public class SchematicManager {
         if (mc.level == null || mc.player == null || schematic == null) return;
         SchematicRegion r = schematic.getMainRegion();
         if (r == null) return;
-        BlockPos s = r.getSize();
+        BlockPos s = r.size;
         for (int y = currentLayerMin; y <= currentLayerMax; y++) {
             for (int x = 0; x < s.getX(); x++) {
                 for (int z = 0; z < s.getZ(); z++) {
@@ -106,8 +100,8 @@ public class SchematicManager {
         BlockPos p = local;
         SchematicRegion r = schematic != null ? schematic.getMainRegion() : null;
         if (r != null) {
-            if (mirrorZ) p = new BlockPos(p.getX(), p.getY(), r.getSize().getZ() - 1 - p.getZ());
-            if (mirrorX) p = new BlockPos(r.getSize().getX() - 1 - p.getX(), p.getY(), p.getZ());
+            if (mirrorZ) p = new BlockPos(p.getX(), p.getY(), r.size.getZ() - 1 - p.getZ());
+            if (mirrorX) p = new BlockPos(r.size.getX() - 1 - p.getX(), p.getY(), p.getZ());
             switch (rotation) {
                 case 90:  p = new BlockPos(-p.getZ(), p.getY(), p.getX()); break;
                 case 180: p = new BlockPos(-p.getX(), p.getY(), -p.getZ()); break;
@@ -125,24 +119,18 @@ public class SchematicManager {
         if (schematic == null) return "";
         Map<String, Long> map = new TreeMap<>();
         for (SchematicRegion r : schematic.regions) {
-            Map<BlockState, Long> mr = new HashMap<>();
-            BlockPos s = r.getSize();
-            for (int x = 0; x < s.getX(); x++) {
-                for (int y = 0; y < s.getY(); y++) {
+            BlockPos s = r.size;
+            for (int x = 0; x < s.getX(); x++)
+                for (int y = 0; y < s.getY(); y++)
                     for (int z = 0; z < s.getZ(); z++) {
                         BlockState bs = r.getBlockState(new BlockPos(x, y, z));
-                        if (bs != null && !bs.isAir()) mr.merge(bs, 1L, Long::sum);
+                        if (bs != null && !bs.isAir())
+                            map.merge(bs.getBlock().getDescriptionId(), 1L, Long::sum);
                     }
-                }
-            }
-            for (Map.Entry<BlockState, Long> e : mr.entrySet()) {
-                map.merge(e.getKey().getBlock().getDescription().getString(), e.getValue(), Long::sum);
-            }
         }
         StringBuilder sb = new StringBuilder();
-        map.entrySet().stream().sorted((a, b) -> b.getValue().compareTo(a.getValue())).forEach(e -> {
-            sb.append(e.getKey()).append(" x ").append(e.getValue()).append("\n");
-        });
+        map.entrySet().stream().sorted((a, b) -> b.getValue().compareTo(a.getValue()))
+            .forEach(e -> sb.append(e.getKey()).append(" x ").append(e.getValue()).append("\n"));
         return sb.toString();
     }
 }

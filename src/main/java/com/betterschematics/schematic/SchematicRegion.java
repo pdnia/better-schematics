@@ -11,13 +11,13 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
 
 public class SchematicRegion {
-    private final String name;
-    private final BlockPos position;
-    private final BlockPos size;
-    private final BlockState[] palette;
-    private final long[] blockData;
-    private final ListTag tileEntities;
-    private final ListTag entities;
+    public final String name;
+    public final BlockPos position;
+    public final BlockPos size;
+    public final BlockState[] palette;
+    public final long[] blockData;
+    public final ListTag tileEntities;
+    public final ListTag entities;
 
     public SchematicRegion(String name, BlockPos position, BlockPos size, BlockState[] palette, long[] blockData, ListTag tileEntities, ListTag entities) {
         this.name = name; this.position = position; this.size = size;
@@ -25,13 +25,11 @@ public class SchematicRegion {
         this.tileEntities = tileEntities; this.entities = entities;
     }
 
-    public String getName() { return name; }
-    public BlockPos getPosition() { return position; }
-    public BlockPos getSize() { return size; }
-    public BlockState[] getPalette() { return palette; }
-    public ListTag getTileEntities() { return tileEntities; }
-    public ListTag getEntities() { return entities; }
-    public long getNonAirBlocks() { long c = 0; for (long l : blockData) { if (l != 0) c++; } return c; }
+    public long getNonAirBlocks() {
+        long c = 0;
+        for (long l : blockData) if (l != 0) c++;
+        return c;
+    }
 
     public BlockState getBlockState(BlockPos localPos) {
         int x = localPos.getX() - position.getX();
@@ -46,15 +44,17 @@ public class SchematicRegion {
     }
 
     public static SchematicRegion read(String name, CompoundTag tag) {
-        BlockPos position = new BlockPos(tag.getCompound("Position").getInt("x"), tag.getCompound("Position").getInt("y"), tag.getCompound("Position").getInt("z"));
-        BlockPos size = new BlockPos(tag.getCompound("Size").getInt("x"), tag.getCompound("Size").getInt("y"), tag.getCompound("Size").getInt("z"));
+        CompoundTag posTag = tag.getCompound("Position").orElse(new CompoundTag());
+        BlockPos position = new BlockPos(posTag.getInt("x").orElse(0), posTag.getInt("y").orElse(0), posTag.getInt("z").orElse(0));
+        CompoundTag sizeTag = tag.getCompound("Size").orElse(new CompoundTag());
+        BlockPos size = new BlockPos(sizeTag.getInt("x").orElse(0), sizeTag.getInt("y").orElse(0), sizeTag.getInt("z").orElse(0));
         ListTag palTag = tag.getList("BlockStatePalette", 10);
         BlockState[] palette = new BlockState[palTag.size()];
-        for (int i = 0; i < palette.length; i++) palette[i] = parseBlockState(palTag.getCompound(i));
-        long[] packed = tag.getLongArray("BlockStates");
+        for (int i = 0; i < palette.length; i++) palette[i] = parseBlockState(palTag.getCompound(i).orElse(new CompoundTag()));
+        long[] packed = tag.getLongArray("BlockStates").orElse(new long[0]);
         int total = size.getX() * size.getY() * size.getZ();
         long[] bd = new long[total];
-        int bits = Math.max(2, 64 - Integer.numberOfLeadingZeros(palette.length - 1));
+        int bits = Math.max(2, 64 - Integer.numberOfLeadingZeros(Math.max(0, palette.length - 1)));
         int baseIdx = 0;
         for (int i = 0; i < bd.length; i++) {
             if (i != 0 && (i % 64) == 0) baseIdx++;
@@ -67,17 +67,17 @@ public class SchematicRegion {
     }
 
     private static BlockState parseBlockState(CompoundTag tag) {
-        String n = tag.getString("Name");
+        String n = tag.getString("Name").orElse("");
         ResourceLocation rl = ResourceLocation.tryParse(n);
         if (rl == null) return Blocks.AIR.defaultBlockState();
         Block block = BuiltInRegistries.BLOCK.get(rl);
         BlockState s = block.defaultBlockState();
         if (tag.contains("Properties")) {
-            CompoundTag props = tag.getCompound("Properties");
+            CompoundTag props = tag.getCompound("Properties").orElse(new CompoundTag());
             for (String key : props.getAllKeys()) {
                 Property<?> prop = s.getBlock().getStateDefinition().getProperty(key);
                 if (prop != null) {
-                    String val = props.getString(key);
+                    String val = props.getString(key).orElse("");
                     s = setPropertyValue(s, prop, val);
                 }
             }
@@ -85,6 +85,7 @@ public class SchematicRegion {
         return s;
     }
 
+    @SuppressWarnings("unchecked")
     private static <T extends Comparable<T>> BlockState setPropertyValue(BlockState s, Property<T> p, String v) {
         return p.getValue(v).map(x -> s.setValue(p, x)).orElse(s);
     }
