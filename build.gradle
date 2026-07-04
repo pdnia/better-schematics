@@ -24,7 +24,6 @@ minecraft {
             workingDir.convention layout.projectDirectory.dir('run')
             systemProperty 'forge.logging.markers', 'REGISTRIES'
             systemProperty 'forge.logging.console.level', 'debug'
-            systemProperty 'eventbus.api.strictRuntimeChecks', 'true'
         }
 
         register('client') {
@@ -48,7 +47,7 @@ repositories {
 
 dependencies {
     implementation minecraft.dependency("net.minecraftforge:forge:${minecraft_version}-${forge_version}")
-    annotationProcessor 'net.minecraftforge:eventbus-validator:7.0.5'
+    annotationProcessor 'net.minecraftforge:eventbus-validator:7.0.1'
 }
 
 tasks.withType(JavaCompile).configureEach {
