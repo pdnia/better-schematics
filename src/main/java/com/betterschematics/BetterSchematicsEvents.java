@@ -3,10 +3,10 @@ package com.betterschematics;
 import com.betterschematics.config.BetterSchematicsConfig;
 import com.betterschematics.gui.SchematicScreen;
 import net.minecraft.client.Minecraft;
+import net.neoforged.bus.api.SubscribeEvent;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.event.bus.SubscribeEvent;
 import net.minecraftforge.event.TickEvent;
 
 @OnlyIn(Dist.CLIENT)
