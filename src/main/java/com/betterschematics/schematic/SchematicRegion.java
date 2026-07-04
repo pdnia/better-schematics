@@ -4,7 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -48,7 +48,7 @@ public class SchematicRegion {
         BlockPos position = new BlockPos(posTag.getInt("x").orElse(0), posTag.getInt("y").orElse(0), posTag.getInt("z").orElse(0));
         CompoundTag sizeTag = tag.getCompound("Size").orElse(new CompoundTag());
         BlockPos size = new BlockPos(sizeTag.getInt("x").orElse(0), sizeTag.getInt("y").orElse(0), sizeTag.getInt("z").orElse(0));
-        ListTag palTag = tag.getList("BlockStatePalette");
+        ListTag palTag = tag.getList("BlockStatePalette").orElse(new ListTag());
         BlockState[] palette = new BlockState[palTag.size()];
         for (int i = 0; i < palette.length; i++) palette[i] = parseBlockState(palTag.getCompound(i).orElse(new CompoundTag()));
         long[] packed = tag.getLongArray("BlockStates").orElse(new long[0]);
@@ -61,14 +61,14 @@ public class SchematicRegion {
             int offset = (i % 64) * bits;
             bd[i] = (packed[baseIdx] >> offset) & ((1L << bits) - 1);
         }
-        ListTag tl = tag.contains("TileEntities") ? tag.getList("TileEntities") : new ListTag();
-        ListTag el = tag.contains("Entities") ? tag.getList("Entities") : new ListTag();
+        ListTag tl = tag.contains("TileEntities") ? tag.getList("TileEntities").orElse(new ListTag()) : new ListTag();
+        ListTag el = tag.contains("Entities") ? tag.getList("Entities").orElse(new ListTag()) : new ListTag();
         return new SchematicRegion(name, position, size, palette, bd, tl, el);
     }
 
     private static BlockState parseBlockState(CompoundTag tag) {
         String n = tag.getString("Name").orElse("");
-        ResourceLocation rl = ResourceLocation.tryParse(n);
+        Identifier rl = Identifier.tryParse(n);
         if (rl == null) return Blocks.AIR.defaultBlockState();
         Block block = BuiltInRegistries.BLOCK.get(rl);
         BlockState s = block.defaultBlockState();
