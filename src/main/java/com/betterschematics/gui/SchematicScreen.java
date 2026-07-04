@@ -46,7 +46,7 @@ public class SchematicScreen extends Screen {
 
         this.addRenderableWidget(Button.builder(Component.literal("Materials"), btn -> {
             String m = manager.exportMaterialList();
-            BetterSchematics.LOGGER.info(m);
+            System.out.println(m);
         }).bounds(cx - 40, cy + 140, 80, 20).build());
 
         this.addRenderableWidget(Button.builder(Component.literal("Resume Game"), btn -> this.onClose())
