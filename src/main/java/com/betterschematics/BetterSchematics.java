@@ -1,9 +1,7 @@
 package com.betterschematics;
 
-import com.betterschematics.gui.SchematicOverlay;
 import com.betterschematics.render.HUDOverlay;
 import com.betterschematics.schematic.SchematicManager;
-import net.neoforged.bus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 
 @Mod("betterschematics")
@@ -14,7 +12,7 @@ public class BetterSchematics {
     private final SchematicManager schematicManager;
     private final HUDOverlay hudOverlay;
 
-    public BetterSchematics(IEventBus modEventBus) {
+    public BetterSchematics() {
         instance = this;
         this.schematicManager = new SchematicManager();
         this.hudOverlay = new HUDOverlay(schematicManager);
