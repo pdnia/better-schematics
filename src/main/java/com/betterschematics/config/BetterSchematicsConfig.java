@@ -6,6 +6,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.eventbus.api.listener.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 
@@ -31,6 +32,7 @@ public class BetterSchematicsConfig {
         SPEC = builder.build();
     }
 
+    @SubscribeEvent
     public static void registerKeys(RegisterKeyMappingsEvent event) {
         openGuiKey = new KeyMapping("betterschematics.key.open_gui", GLFW.GLFW_KEY_M, CATEGORY);
         executePlaceKey = new KeyMapping("betterschematics.key.execute_place", GLFW.GLFW_KEY_G, CATEGORY);
