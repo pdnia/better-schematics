@@ -2,11 +2,13 @@ package com.betterschematics.config;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.resources.Identifier;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
+import java.util.Map;
 
 @Mod.EventBusSubscriber(modid = "betterschematics", bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class BetterSchematicsConfig {
@@ -15,7 +17,7 @@ public class BetterSchematicsConfig {
     public static final ForgeConfigSpec.BooleanValue SHOW_MINIMAP;
     public static final ForgeConfigSpec.BooleanValue SHOW_MATERIAL_LIST;
 
-    private static final KeyMapping.Category CATEGORY = new KeyMapping.Category("key.categories.group:betterschematics");
+    private static final KeyMapping.Category CATEGORY = new KeyMapping.Category(Identifier.fromNamespaceAndPath("betterschematics", "keycategory"), Map.of());
 
     public static KeyMapping openGuiKey;
     public static KeyMapping executePlaceKey;
