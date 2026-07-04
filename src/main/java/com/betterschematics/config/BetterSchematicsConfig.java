@@ -29,11 +29,11 @@ public class BetterSchematicsConfig {
     }
 
     public static void registerKeys(RegisterKeyMappingsEvent event) {
-        openGuiKey = new KeyMapping("betterschematics.key.open_gui", GLFW.GLFW_KEY_M, "key.categories.group:betterschematics");
-        executePlaceKey = new KeyMapping("betterschematics.key.execute_place", GLFW.GLFW_KEY_G, "key.categories.group:betterschematics");
-        toggleRenderKey = new KeyMapping("betterschematics.key.toggle_render", GLFW.GLFW_KEY_R, "key.categories.group:betterschematics");
-        layerUpKey = new KeyMapping("betterschematics.key.layer_up", GLFW.GLFW_KEY_UP, "key.categories.group:betterschematics");
-        layerDownKey = new KeyMapping("betterschematics.key.layer_down", GLFW.GLFW_KEY_DOWN, "key.categories.group:betterschematics");
+        openGuiKey = KeyMapping.create("betterschematics.key.open_gui", GLFW.GLFW_KEY_M);
+        executePlaceKey = KeyMapping.create("betterschematics.key.execute_place", GLFW.GLFW_KEY_G);
+        toggleRenderKey = KeyMapping.create("betterschematics.key.toggle_render", GLFW.GLFW_KEY_R);
+        layerUpKey = KeyMapping.create("betterschematics.key.layer_up", GLFW.GLFW_KEY_UP);
+        layerDownKey = KeyMapping.create("betterschematics.key.layer_down", GLFW.GLFW_KEY_DOWN);
         event.register(openGuiKey);
         event.register(executePlaceKey);
         event.register(toggleRenderKey);
