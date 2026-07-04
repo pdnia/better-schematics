@@ -11,12 +11,14 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.CustomizeGuiOverlayEvent;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.listener.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 @OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = BetterSchematics.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class BetterSchematicsEvents {
 
+    @SubscribeEvent
     public static void onKeyInput(InputEvent.Key event) {
         if (Minecraft.getInstance().player == null) return;
 
@@ -37,10 +39,12 @@ public class BetterSchematicsEvents {
         }
     }
 
+    @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         // periodic tasks
     }
 
+    @SubscribeEvent
     public static void onRenderOverlay(CustomizeGuiOverlayEvent event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) return;
