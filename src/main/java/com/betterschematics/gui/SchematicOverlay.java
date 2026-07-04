@@ -8,8 +8,10 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.CustomizeGuiOverlayEvent;
+import net.minecraftforge.fml.common.Mod;
 
 @OnlyIn(Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = BetterSchematics.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class SchematicOverlay {
     private static final Minecraft mc = Minecraft.getInstance();
 
