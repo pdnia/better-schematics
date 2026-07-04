@@ -35,7 +35,7 @@ public class SchematicData {
         }
         if (root.contains("Regions")) {
             CompoundTag regionsTag = root.getCompound("Regions").orElse(new CompoundTag());
-            for (String key : regionsTag.getAllKeys()) {
+            for (String key : regionsTag.keySet()) {
                 CompoundTag regionTag = regionsTag.getCompound(key).orElse(null);
                 if (regionTag != null) {
                     data.regions.add(SchematicRegion.read(key, regionTag));
