@@ -15,6 +15,8 @@ public class BetterSchematicsConfig {
     public static final ForgeConfigSpec.BooleanValue SHOW_MINIMAP;
     public static final ForgeConfigSpec.BooleanValue SHOW_MATERIAL_LIST;
 
+    private static final KeyMapping.Category CATEGORY = new KeyMapping.Category("key.categories.group:betterschematics");
+
     public static KeyMapping openGuiKey;
     public static KeyMapping executePlaceKey;
     public static KeyMapping toggleRenderKey;
@@ -29,11 +31,11 @@ public class BetterSchematicsConfig {
     }
 
     public static void registerKeys(RegisterKeyMappingsEvent event) {
-        openGuiKey = KeyMapping.create("betterschematics.key.open_gui", GLFW.GLFW_KEY_M);
-        executePlaceKey = KeyMapping.create("betterschematics.key.execute_place", GLFW.GLFW_KEY_G);
-        toggleRenderKey = KeyMapping.create("betterschematics.key.toggle_render", GLFW.GLFW_KEY_R);
-        layerUpKey = KeyMapping.create("betterschematics.key.layer_up", GLFW.GLFW_KEY_UP);
-        layerDownKey = KeyMapping.create("betterschematics.key.layer_down", GLFW.GLFW_KEY_DOWN);
+        openGuiKey = new KeyMapping("betterschematics.key.open_gui", GLFW.GLFW_KEY_M, CATEGORY);
+        executePlaceKey = new KeyMapping("betterschematics.key.execute_place", GLFW.GLFW_KEY_G, CATEGORY);
+        toggleRenderKey = new KeyMapping("betterschematics.key.toggle_render", GLFW.GLFW_KEY_R, CATEGORY);
+        layerUpKey = new KeyMapping("betterschematics.key.layer_up", GLFW.GLFW_KEY_UP, CATEGORY);
+        layerDownKey = new KeyMapping("betterschematics.key.layer_down", GLFW.GLFW_KEY_DOWN, CATEGORY);
         event.register(openGuiKey);
         event.register(executePlaceKey);
         event.register(toggleRenderKey);
