@@ -9,6 +9,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
+import java.util.Optional;
 
 public class SchematicRegion {
     public final String name;
@@ -70,7 +71,8 @@ public class SchematicRegion {
         String n = tag.getString("Name").orElse("");
         Identifier rl = Identifier.tryParse(n);
         if (rl == null) return Blocks.AIR.defaultBlockState();
-        Block block = BuiltInRegistries.BLOCK.get(rl);
+        Block block = BuiltInRegistries.BLOCK.get(rl).orElse(null);
+        if (block == null) return Blocks.AIR.defaultBlockState();
         BlockState s = block.defaultBlockState();
         if (tag.contains("Properties")) {
             CompoundTag props = tag.getCompound("Properties").orElse(new CompoundTag());
@@ -86,7 +88,7 @@ public class SchematicRegion {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T extends Comparable<T>> BlockState setPropertyValue(BlockState s, Property<T> p, String v) {
-        return p.getValue(v).map(x -> s.setValue(p, x)).orElse(s);
+    private static <T extends Comparable<T>> BlockState setPropertyValue(BlockState s, Property<T> q, String v) {
+        return q.getValue(v).map(x -> s.setValue(q, x)).orElse(s);
     }
 }
