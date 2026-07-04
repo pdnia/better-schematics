@@ -3,7 +3,6 @@ package com.betterschematics;
 import com.betterschematics.config.BetterSchematicsConfig;
 import com.betterschematics.gui.SchematicScreen;
 import net.minecraft.client.Minecraft;
-import net.neoforged.bus.api.SubscribeEvent;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
@@ -14,8 +13,7 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = BetterSchematics.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class BetterSchematicsEvents {
 
-    @SubscribeEvent
-    public void onKeyInput(InputEvent.Key event) {
+    public static void onKeyInput(InputEvent.Key event) {
         if (Minecraft.getInstance().player == null) return;
 
         while (BetterSchematicsConfig.openGuiKey.consumeClick()) {
@@ -35,8 +33,7 @@ public class BetterSchematicsEvents {
         }
     }
 
-    @SubscribeEvent
-    public void onClientTick(TickEvent.ClientTickEvent event) {
+    public static void onClientTick(TickEvent.ClientTickEvent event) {
         // periodic tasks
     }
 }
