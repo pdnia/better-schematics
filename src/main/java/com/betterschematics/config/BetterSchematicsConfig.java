@@ -8,7 +8,6 @@ import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
-import java.util.Map;
 
 @Mod.EventBusSubscriber(modid = "betterschematics", bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class BetterSchematicsConfig {
@@ -17,7 +16,7 @@ public class BetterSchematicsConfig {
     public static final ForgeConfigSpec.BooleanValue SHOW_MINIMAP;
     public static final ForgeConfigSpec.BooleanValue SHOW_MATERIAL_LIST;
 
-    private static final KeyMapping.Category CATEGORY = new KeyMapping.Category(Identifier.fromNamespaceAndPath("betterschematics", "keycategory"), Map.of());
+    private static final KeyMapping.Category CATEGORY = new KeyMapping.Category(Identifier.fromNamespaceAndPath("betterschematics", "keycategory"));
 
     public static KeyMapping openGuiKey;
     public static KeyMapping executePlaceKey;
