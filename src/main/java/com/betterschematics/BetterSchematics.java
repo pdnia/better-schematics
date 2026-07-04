@@ -2,7 +2,7 @@ package com.betterschematics;
 
 import com.betterschematics.config.BetterSchematicsConfig;
 import com.betterschematics.gui.SchematicScreen;
-import com.betterschematics.render.HudOverlay;
+import com.betterschematics.render.HUDOverlay;
 import com.betterschematics.schematic.SchematicManager;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.common.MinecraftForge;
