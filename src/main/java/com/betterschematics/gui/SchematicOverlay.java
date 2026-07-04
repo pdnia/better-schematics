@@ -7,14 +7,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = "betterschematics", value = Dist.CLIENT)
 public class SchematicOverlay {
     private static final Minecraft mc = Minecraft.getInstance();
 
-    @SubscribeEvent
     public static void onRenderOverlay(RenderGuiEvent.Post event) {
         if (mc.player == null || mc.level == null) return;
         BetterSchematics mod = BetterSchematics.getInstance();
