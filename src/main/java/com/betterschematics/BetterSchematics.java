@@ -46,7 +46,7 @@ public class BetterSchematics {
             layers.addAbove(
                 Identifier.withDefaultNamespace("hotbar"),
                 modLayerName,
-                (ggx, dt) -> hudOverlay.render(ggx, dt)
+                (ggx, dt) -> hudOverlay.render(ggx, 0.0f)
             );
         });
     }
