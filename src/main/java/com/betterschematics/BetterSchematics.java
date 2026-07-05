@@ -3,6 +3,7 @@ package com.betterschematics;
 import com.betterschematics.config.BetterSchematicsConfig;
 import com.betterschematics.gui.SchematicScreen;
 import com.betterschematics.render.HUDOverlay;
+import com.betterschematics.render.SchematicRenderer;
 import com.betterschematics.schematic.SchematicData;
 import com.betterschematics.schematic.SchematicManager;
 import net.minecraft.client.Minecraft;
@@ -11,22 +12,22 @@ import net.minecraft.resources.Identifier;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.AddGuiOverlayLayersEvent;
 import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.loading.FMLEnvironment;
-
 @Mod("betterschematics")
 public class BetterSchematics {
     public static final String MODID = "betterschematics";
 
     private static BetterSchematics instance;
     private final SchematicManager schematicManager;
+    private final SchematicRenderer schematicRenderer;
     private final HUDOverlay hudOverlay;
 
     public BetterSchematics() {
         instance = this;
         this.schematicManager = new SchematicManager();
+        this.schematicRenderer = new SchematicRenderer();
         this.hudOverlay = new HUDOverlay(schematicManager);
 
         if (FMLEnvironment.dist == Dist.CLIENT) {
@@ -39,7 +40,7 @@ public class BetterSchematics {
         InputEvent.Key.BUS.addListener(this::onKeyInput);
 
         // Client tick event
-        TickEvent.ClientTickEvent.Pre.BUS.addListener(event -> onClientTick());
+        TickEvent.ClientTickEvent.PRE.BUS.addListener(event -> onClientTick());
 
         // Register key bindings
         RegisterKeyMappingsEvent.BUS.addListener(BetterSchematicsConfig::registerKeys);
@@ -53,6 +54,17 @@ public class BetterSchematics {
                 modLayerName,
                 (ggx, dt) -> renderOverlay(ggx)
             );
+        });
+
+        // Register 3D world render for schematic outline
+        RenderLevelStageEvent.BUS.addListener(event => {
+            if (event.getStage() == RenderLevelStageEvent.Stage.AFTSÒ_TRANSLUCENT_BLOCKS) {
+                schematicRenderer.renderSchematicOutline(
+                    schematicManager,
+                    event.getProjectionMatrix(),
+                    event.getCamera().pose()
+                );
+            }
         });
     }
 
@@ -92,5 +104,6 @@ public class BetterSchematics {
 
     public static BetterSchematics getInstance() { return instance; }
     public SchematicManager getSchematicManager() { return schematicManager; }
+    public SchematicRenderer getSchematicRenderer() { return schematicRenderer; }
     public HUDOverlay getHudOverlay() { return hudOverlay; }
 }
