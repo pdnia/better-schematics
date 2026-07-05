@@ -89,7 +89,7 @@ public class SchematicRegion {
 
     private static BlockState parseBlockState(CompoundTag tag) {
         String n = tag.getString("Name").orElse("");
-        Identifier rl = new Identifier(n);
+        Identifier rl = Identifier.of(n);
         Block b = BuiltInRegistries.BLOCK.getValue(rl);
         if (b == null) return Blocks.AIR.defaultBlockState();
         BlockState s = b.defaultBlockState();
