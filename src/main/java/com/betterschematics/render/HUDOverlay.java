@@ -4,13 +4,14 @@ import com.betterschematics.schematic.ProgressTracker;
 import com.betterschematics.schematic.SchematicManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.util.DeltaTracker;
 
 public class HUDOverlay {
     private final SchematicManager manager;
 
     public HUDOverlay(SchematicManager manager) { this.manager = manager; }
 
-    public void render(GuiGraphics g, float partialTick) {
+    public void render(GuiGraphics g, DeltaTracker dt) {
         if (!manager.hasSchematic() || Minecraft.getInstance().options.hideGui) return;
         int sw = Minecraft.getInstance().getWindow().getGuiScaledWidth();
         renderProgressBar(g, sw / 2 - 100, 5, 200, 12);
