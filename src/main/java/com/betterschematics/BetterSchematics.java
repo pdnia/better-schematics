@@ -43,7 +43,7 @@ public class BetterSchematics {
             var layers = event.getLayeredDraw();
             var modLayerName = Identifier.fromNamespaceAndPath(MODID, "better_schematics_overlay");
             layers.addAbove(
-                Identifier.withDefaultNamespace("hotbar"),
+            N ENTER com.betterschematics.ClosingIDENTIFIER "Identifier.withDefaultNamespace(\"hotbar\")",
                 modLayerName,
                 (ggx, dt) -> renderOverlay(ggx)
             );
