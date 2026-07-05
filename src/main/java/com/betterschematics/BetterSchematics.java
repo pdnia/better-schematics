@@ -7,8 +7,11 @@ import com.betterschematics.schematic.SchematicData;
 import com.betterschematics.schematic.SchematicManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.resources.Identifier;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.AddGuiOverlayLayersEvent;
 import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;
@@ -32,11 +35,27 @@ public class BetterSchematics {
     }
 
     private void registerClientEvents() {
-        // InputEvent.Key using the new EventBus API
-        InputEvent.Key.BUS.addListener(event -> onKeyInput(event));
+        // Key input event
+        InputEvent.Key.BUS.addListener(this::onKeyInput);
 
-        // TickEvent.ClientTickEvent.Pre using the new EventBus API
+        // Client tick event
         TickEvent.ClientTickEvent.Pre.BUS.addListener(event -> onClientTick());
+
+        // Register key bindings
+        RegisterKeyMappingsEvent.BUS.addListener(event -> {
+            BetterSchematicsConfig.registerKeys(s -> event.register(s));
+        });
+
+        // Register HUD overlay layer
+        AddGuiOverlayLayersEvent.BUS.addListener(event -> {
+            var layers = event.getLayeredDraw();
+            var modLayerName = Identifier.fromNamespaceAndPath(MODID, "better_schematics_overlay");
+            layers.addAbove(
+                Identifier.withDefaultNamespace("hotbar"),
+                modLayerName,
+                (ggx, dt) -> renderOverlay(ggx)
+            );
+        });
     }
 
     private void onKeyInput(InputEvent.Key event) {
@@ -59,6 +78,19 @@ public class BetterSchematics {
 
     private void onClientTick() {
         // periodic tasks
+    }
+
+    private void renderOverlay(GuiGraphics g) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.level == null) return;
+        SchematicData schematic = schematicManager.getActiveSchematic();
+        if (schematic == null) return;
+
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
+        g.drawString(mc.font, "BetterSchematics", sw / 2 - 40, 10, 0xFFFFFFFF);
+        g.drawString(mc.font, "Schematic: " + schematic.name, sw / 2 - 40, 20, 0xFFFFFFFF);
+        g.drawString(mc.font, "Layer: " + schematicManager.getCurrentLayerMin(), sw / 2 - 40, 30, 0xFFFFFFFF);
     }
 
     public static BetterSchematics getInstance() { return instance; }
