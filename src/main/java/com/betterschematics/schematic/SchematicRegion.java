@@ -4,7 +4,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -89,11 +88,10 @@ public class SchematicRegion {
 
     private static BlockState parseBlockState(CompoundTag tag) {
         String n = tag.getString("Name").orElse("");
-        ResourceLocation rl = ResourceLocation.tryParse(n);
-        if (rl == null) return Blocks.AIR.defaultBlockState();
-        Block block = BuiltInRegistries.BLOCK.getValue(rl);
-        if (block == null) return Blocks.AIR.defaultBlockState();
-        BlockState s = block.defaultBlockState();
+        net.minecraft.core.Identifier rl = new net.minecraft.core.Identifier(n);
+        Block b = BuiltInRegistries.BLOCK.getValue(rl);
+        if (b == null) return Blocks.AIR.defaultBlockState();
+        BlockState s = b.defaultBlockState();
         if (tag.contains("Properties")) {
             CompoundTag props = tag.getCompound("Properties").orElse(new CompoundTag());
             for (String key : props.keySet()) {
