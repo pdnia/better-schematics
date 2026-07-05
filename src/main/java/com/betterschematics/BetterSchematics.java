@@ -1,9 +1,15 @@
 package com.betterschematics;
 
+import com.betterschematics.config.BetterSchematicsConfig;
+import com.betterschematics.gui.SchematicScreen;
 import com.betterschematics.render.HUDOverlay;
+import com.betterschematics.schematic.SchematicData;
 import com.betterschematics.schematic.SchematicManager;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 
@@ -20,10 +26,39 @@ public class BetterSchematics {
         this.schematicManager = new SchematicManager();
         this.hudOverlay = new HUDOverlay(schematicManager);
 
-        // Register event handlers on the forge bus (only on client side)
         if (FMLEnvironment.dist == Dist.CLIENT) {
-            MinecraftForge.EVENT_BUS.register(BetterSchematicsEvents.class);
+            registerClientEvents();
         }
+    }
+
+    private void registerClientEvents() {
+        // InputEvent.Key using the new EventBus API
+        InputEvent.Key.BUS.addListener(event -> onKeyInput(event));
+
+        // TickEvent.ClientTickEvent.Pre using the new EventBus API
+        TickEvent.ClientTickEvent.Pre.BUS.addListener(event -> onClientTick());
+    }
+
+    private void onKeyInput(InputEvent.Key event) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) return;
+
+        while (BetterSchematicsConfig.openGuiKey != null && BetterSchematicsConfig.openGuiKey.consumeClick()) {
+            mc.setScreen(new SchematicScreen());
+        }
+        while (BetterSchematicsConfig.executePlaceKey != null && BetterSchematicsConfig.executePlaceKey.consumeClick()) {
+            schematicManager.placeNextBlock();
+        }
+        while (BetterSchematicsConfig.layerUpKey != null && BetterSchematicsConfig.layerUpKey.consumeClick()) {
+            schematicManager.shiftLayerUp();
+        }
+        while (BetterSchematicsConfig.layerDownKey != null && BetterSchematicsConfig.layerDownKey.consumeClick()) {
+            schematicManager.shiftLayerDown();
+        }
+    }
+
+    private void onClientTick() {
+        // periodic tasks
     }
 
     public static BetterSchematics getInstance() { return instance; }
