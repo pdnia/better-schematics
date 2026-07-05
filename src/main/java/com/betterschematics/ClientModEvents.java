@@ -13,7 +13,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.listener.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-@Mod.EventBusSubscriber(modid = BetterSchematics.MODID, value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = BetterSchematics.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ClientModEvents {
 
     @SubscribeEvent
