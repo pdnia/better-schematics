@@ -4,13 +4,16 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
+import com.mojang.logging.LogUtils;
+import org.slf4j.Logger;
 
 public class SchematicRegion {
+    private static final Logger LOGGER = LogUtils.getLogger();
     public final String name;
     public final BlockPos position;
     public final BlockPos size;
@@ -48,19 +51,37 @@ public class SchematicRegion {
         BlockPos position = new BlockPos(posTag.getInt("x").orElse(0), posTag.getInt("y").orElse(0), posTag.getInt("z").orElse(0));
         CompoundTag sizeTag = tag.getCompound("Size").orElse(new CompoundTag());
         BlockPos size = new BlockPos(sizeTag.getInt("x").orElse(0), sizeTag.getInt("y").orElse(0), sizeTag.getInt("z").orElse(0));
+        LOGGER.info("[BetterSchematics] Region '{}' size: {} x {} x {}", name, size.getX(), size.getY(), size.getZ());
+
         ListTag palTag = tag.getList("BlockStatePalette").orElse(new ListTag());
-        BlockState[] palette = new BlockState[palTag.size()];
+        int paletteSize = palTag.size();
+        LOGGER.info("[BetterSchematics] Palette size: {}", paletteSize);
+        BlockState[] palette = new BlockState[paletteSize];
         for (int i = 0; i < palette.length; i++) palette[i] = parseBlockState(palTag.getCompound(i).orElse(new CompoundTag()));
+
+        long totalBlocks = (long) size.getX() * (long) size.getY() * (long) size.getZ();
+        LOGGER.info("[BetterSchematics] Total blocks: {}", totalBlocks);
+        long[] bd = new long[(int) Math.min(totalBlocks, Integer.MAX_VALUE)];
+
+        int bits = Math.max(2, 64 - Integer.numberOfLeadingZeros(Math.max(1, paletteSize - 1)));
+        LOGGER.info("[BetterSchematics] Bits per block: {}", bits);
+
         long[] packed = tag.getLongArray("BlockStates").orElse(new long[0]);
-        int total = size.getX() * size.getY() * size.getZ();
-        long[] bd = new long[total];
-        int bits = Math.max(2, 64 - Integer.numberOfLeadingZeros(Math.max(0, palette.length - 1)));
-        int baseIdx = 0;
-        for (int i = 0; i < bd.length; i++) {
-            if (i != 0 && (i % 64) == 0) baseIdx++;
-            int offset = (i % 64) * bits;
-            bd[i] = (packed[baseIdx] >> offset) & ((1L << bits) - 1);
+        LOGGER.info("[BetterSchematics] Packed BlockStates length: {}", packed.length);
+        
+        if (packed.length == 0) {
+            LOGGER.warn("[BetterSchematics] No BlockStates in region '{}', creating empty data", name);
+        } else {
+            int blocksPerLong = 64 / bits;
+            for (int i = 0; i < bd.length; i++) {
+                int longIdx = i / blocksPerLong;
+                int bitOffset = (i % blocksPerLong) * bits;
+                if (longIdx < packed.length) {
+                    bd[i] = (packed[longIdx] >>> bitOffset) & ((1L << bits) - 1);
+                }
+            }
         }
+
         ListTag tl = tag.contains("TileEntities") ? tag.getList("TileEntities").orElse(new ListTag()) : new ListTag();
         ListTag el = tag.contains("Entities") ? tag.getList("Entities").orElse(new ListTag()) : new ListTag();
         return new SchematicRegion(name, position, size, palette, bd, tl, el);
@@ -68,7 +89,7 @@ public class SchematicRegion {
 
     private static BlockState parseBlockState(CompoundTag tag) {
         String n = tag.getString("Name").orElse("");
-        Identifier rl = Identifier.tryParse(n);
+        ResourceLocation rl = ResourceLocation.tryParse(n);
         if (rl == null) return Blocks.AIR.defaultBlockState();
         Block block = BuiltInRegistries.BLOCK.getValue(rl);
         if (block == null) return Blocks.AIR.defaultBlockState();
