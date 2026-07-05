@@ -3,7 +3,6 @@ package com.betterschematics;
 import com.betterschematics.config.BetterSchematicsConfig;
 import com.betterschematics.gui.SchematicScreen;
 import com.betterschematics.render.HUDOverlay;
-import com.betterschematics.schematic.ProgressTracker;
 import com.betterschematics.schematic.SchematicData;
 import com.betterschematics.schematic.SchematicManager;
 import net.minecraft.client.Minecraft;
@@ -46,7 +45,7 @@ public class BetterSchematics {
             layers.addAbove(
                 Identifier.withDefaultNamespace("hotbar"),
                 modLayerName,
-                (ggx, dt) -> hudOverlay.render(ggx, 0.0f)
+                (ggx, dt) -> renderOverlay(ggx)
             );
         });
     }
@@ -69,7 +68,18 @@ public class BetterSchematics {
         }
     }
 
-    private void onClientTick() {
+    private void onClientTick() { }
+
+    private void renderOverlay(GuiGraphics g) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.level == null) return;
+        SchematicData schematic = schematicManager.getActiveSchematic();
+        if (schematic == null) return;
+
+        int sw = mc.getWindow().getGuiScaledWidth();
+        g.drawString(mc.font, "BetterSchematics", sw / 2 - 40, 10, 0xFFFFFFFF);
+        g.drawString(mc.font, "Schematic: " + schematic.name, sw / 2 - 40, 20, 0xFFFFFFFF);
+        g.drawString(mc.font, "Layer: " + schematicManager.getCurrentLayerMin(), sw / 2 - 40, 30, 0xFFFFFFFF);
     }
 
     public static BetterSchematics getInstance() { return instance; }
