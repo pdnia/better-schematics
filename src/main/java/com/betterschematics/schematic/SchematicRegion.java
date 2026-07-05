@@ -50,7 +50,11 @@ public class SchematicRegion {
         CompoundTag posTag = tag.getCompound("Position").orElse(new CompoundTag());
         BlockPos position = new BlockPos(posTag.getInt("x").orElse(0), posTag.getInt("y").orElse(0), posTag.getInt("z").orElse(0));
         CompoundTag sizeTag = tag.getCompound("Size").orElse(new CompoundTag());
-        BlockPos size = new BlockPos(sizeTag.getInt("x").orElse(0), sizeTag.getInt("y").orElse(0), sizeTag.getInt("z").orElse(0));
+        BlockPos size = new BlockPos(
+            Math.abs(sizeTag.getInt("x").orElse(0)),
+            Math.abs(sizeTag.getInt("y").orElse(0)),
+            Math.abs(sizeTag.getInt("z").orElse(0))
+        );
         LOGGER.info("[BetterSchematics] Region '{}' size: {} x {} x {}", name, size.getX(), size.getY(), size.getZ());
 
         ListTag palTag = tag.getList("BlockStatePalette").orElse(new ListTag());
