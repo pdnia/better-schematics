@@ -55,7 +55,7 @@ public class SchematicScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(g, mouseX, mouseY, partialTick);
+        super.render(g, mouseX, mouseY, partialTick);
         g.drawCenteredString(this.font, Component.literal("Better Schematics v0.3"), this.width / 2, 10, 0xFFFFFFFF);
         if (manager.hasSchematic()) {
             SchematicData d = manager.getActiveSchematic();
@@ -63,7 +63,6 @@ public class SchematicScreen extends Screen {
             g.drawString(this.font, "Name: " + d.name, 5, 30, 0xFFFFFFFF);
             g.drawString(this.font, "Progress: " + String.format("%.1f%%", pt.getPercentComplete()), 5, 45, 0xFFFFFFFF);
         }
-        super.render(g, mouseX, mouseY, partialTick);
     }
 
     @Override
