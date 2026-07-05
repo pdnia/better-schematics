@@ -1,36 +1,75 @@
 package com.betterschematics.render;
 
 import com.betterschematics.schematic.ProgressTracker;
+import com.betterschematics.schematic.SchematicData;
 import com.betterschematics.schematic.SchematicManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.util.DeltaTracker;
+import net.minecraft.core.BlockPos;
 
 public class HUDOverlay {
     private final SchematicManager manager;
 
     public HUDOverlay(SchematicManager manager) { this.manager = manager; }
 
-    public void render(GuiGraphics g, DeltaTracker dt) {
-        if (!manager.hasSchematic() || Minecraft.getInstance().options.hideGui) return;
-        int sw = Minecraft.getInstance().getWindow().getGuiScaledWidth();
-        renderProgressBar(g, sw / 2 - 100, 5, 200, 12);
-        renderLayerInfo(g, 5, 5, 200, 20);
-    }
+    public void render(GuiGraphics g) {
+        SchematicData schematic = manager.getActiveSchematic();
+        if (schematic == null) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.level == null) return;
 
-    private void renderProgressBar(GuiGraphics g, int x, int y, int w, int h) {
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
+
+        int panelX = sw - 210;
+        int panelY = 5;
+
+        g.fill(panelX, panelY, sw - 5, sh - 5, 0xAA000000);
+
+        g.drawString(mc.font, schematic.name, panelX + 5, panelY + 5, 0xFFFFAA00);
+        panelY += 15;
+
         ProgressTracker pt = manager.getProgressTracker();
         double pc = pt.getPercentComplete();
-        g.fill(x, y, x + w, y + h, 0xA0000000);
-        int pw = (int) Math.clamp((long)(w * pc / 100.0), 0, w - 2);
-        g.fill(x + 1, y + 1, x + 1 + pw, y + h - 1, 0x8800FF00);
-        g.drawString(Minecraft.getInstance().font, String.format("%.1f%%", pc), x + w / 2 - 10, y + -4, 0xFFFFFFFF);
-    }
+        g.drawString(mc.font, String.format("Progress: %.1f%%", pc), panelX + 5, panelY + 2, 0xFFFFFFFF);
+        int barW = 190;
+        g.fill(panelX + 5, panelY + 14, panelX + 5 + barW, panelY + 24, 0xFF333333);
+        int pw = (int) Math.clamp((long)(barW * pc / 100.0), 0, barW);
+        g.fill(panelX + 5, panelY + 14, panelX + 5 + pw, panelY + 24, 0xFF00AA00);
+        panelY += 28;
 
-    private void renderLayerInfo(GuiGraphics g, int x, int y, int w, int h) {
-        g.fill(x, y, x + w, y + 22, 0xA0000000);
-        g.drawString(Minecraft.getInstance().font,
-            String.format("Layer: %d - %d", manager.getCurrentLayerMin(), manager.getCurrentLayerMax()),
-            x + 5, y + 15, 0xFFFFFFFF);
+        BlockPos origin = manager.getPlacementOrigin();
+        g.drawString(mc.font, "Origin: " + origin.getX() + ", " + origin.getY() + ", " + origin.getZ(), panelX + 5, panelY + 2, 0xFFFFAA00);
+        panelY += 15;
+
+        g.drawString(mc.font, "Layer: " + manager.getCurrentLayerMin() + " - " + manager.getCurrentLayerMax(), panelX + 5, panelY + 2, 0xFFAAFFFF);
+        panelY += 15;
+
+        var region = schematic.getMainRegion();
+        if (region != null) {
+            var size = region.size;
+            g.drawString(mc.font, "Size: " + size.getX() + "x" + size.getY() + "x" + size.getZ(), panelX + 5, panelY + 2, 0xFFFFAA00);
+            panelY += 15;
+        }
+
+        g.drawString(mc.font, "Rot: " + manager.getRotation() + "deg  MX: " + manager.isMirrorX() + "  MZ: " + manager.isMirrorZ(), panelX + 5, panelY + 2, 0xFF888888);
+        panelY += 20;
+
+        g.drawString(mc.font, "--- Materials needed ---", panelX + 5, panelY + 2, 0xFFAAFFFF);
+        panelY += 15;
+
+        String matList = manager.exportMaterialList();
+        if (matList != null && !matList.isEmpty()) {
+            String[] lines = matList.split("\n");
+            int maxLines = (sh - panelY - 10) / 10;
+            int count = 0;
+            for (String line : lines) {
+                if (count >= maxLines) break;
+                if (line.trim().isEmpty()) continue;
+                g.drawString(mc.font, line.trim(), panelX + 5, panelY, 0xFFAAAAAA);
+                panelY += 10;
+                count++;
+            }
+        }
     }
 }

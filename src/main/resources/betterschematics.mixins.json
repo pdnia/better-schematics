@@ -1,0 +1,8 @@
+{
+    "required": true,
+    "package": "com.betterschematics.mixin",
+    "compatibilityLevel": "JAVA_21",
+    "refmap": "betterschematics.refmap.json",
+    "client": ["MixinGui"],
+    "injectors": { "defaultRequire": 1 }
+}
