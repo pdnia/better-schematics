@@ -10,7 +10,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.CustomizeGuiOverlayEvent;
 import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.listener.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -20,14 +19,8 @@ import net.minecraftforge.fml.common.Mod;
 public class BetterSchematicsEvents {
 
     @SubscribeEvent
-    public static void onRegisterKeys(RegisterKeyMappingsEvent event) {
-        BetterSchematicsConfig.registerKeys(event);
-    }
-
-    @SubscribeEvent
     public static void onKeyInput(InputEvent.Key event) {
         if (Minecraft.getInstance().player == null) return;
-
         while (BetterSchematicsConfig.openGuiKey.consumeClick()) {
             Minecraft.getInstance().setScreen(new SchematicScreen());
         }
