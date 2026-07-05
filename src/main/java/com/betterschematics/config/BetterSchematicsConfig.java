@@ -32,6 +32,9 @@ public class BetterSchematicsConfig {
         SPEC = builder.build();
     }
 
+    /**
+     * Registers key mappings. Called from mod constructor.
+     */
     public static void registerKeys(RegisterKeyMappingsEvent event) {
         openGuiKey = new KeyMapping("betterschematics.key.open_gui", GLFW.GLFW_KEY_M, CATEGORY);
         executePlaceKey = new KeyMapping("betterschematics.key.execute_place", GLFW.GLFW_KEY_G, CATEGORY);
