@@ -10,7 +10,7 @@ import net.minecraftforge.eventbus.api.listener.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 
-@Mod.EventBusSubscriber(modid = "betterschematics", bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+@Nonextendings()
 public class BetterSchematicsConfig {
 
     public static final ForgeConfigSpec SPEC;
@@ -32,7 +32,6 @@ public class BetterSchematicsConfig {
         SPEC = builder.build();
     }
 
-    @SubscribeEvent
     public static void registerKeys(RegisterKeyMappingsEvent event) {
         openGuiKey = new KeyMapping("betterschematics.key.open_gui", GLFW.GLFW_KEY_M, CATEGORY);
         executePlaceKey = new KeyMapping("betterschematics.key.execute_place", GLFW.GLFW_KEY_G, CATEGORY);
