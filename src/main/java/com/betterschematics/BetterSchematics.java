@@ -42,9 +42,7 @@ public class BetterSchematics {
         TickEvent.ClientTickEvent.Pre.BUS.addListener(event -> onClientTick());
 
         // Register key bindings
-        RegisterKeyMappingsEvent.BUS.addListener(event -> {
-            BetterSchematicsConfig.registerKeys(s -> event.register(s));
-        });
+        RegisterKeyMappingsEvent.BUS.addListener(BetterSchematicsConfig::registerKeys);
 
         // Register HUD overlay layer
         AddGuiOverlayLayersEvent.BUS.addListener(event -> {
@@ -87,7 +85,6 @@ public class BetterSchematics {
         if (schematic == null) return;
 
         int sw = mc.getWindow().getGuiScaledWidth();
-        int sh = mc.getWindow().getGuiScaledHeight();
         g.drawString(mc.font, "BetterSchematics", sw / 2 - 40, 10, 0xFFFFFFFF);
         g.drawString(mc.font, "Schematic: " + schematic.name, sw / 2 - 40, 20, 0xFFFFFFFF);
         g.drawString(mc.font, "Layer: " + schematicManager.getCurrentLayerMin(), sw / 2 - 40, 30, 0xFFFFFFFF);
