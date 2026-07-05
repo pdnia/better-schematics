@@ -4,16 +4,10 @@ import com.betterschematics.schematic.SchematicData;
 import com.betterschematics.schematic.SchematicManager;
 import com.betterschematics.schematic.SchematicRegion;
 import com.mojang.block3d.Matrix4f;
-import com.mojang.block3d.VaserWidget;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.ShaperProgram;
+import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.vesel.ViselShape;
-import net.minecraft.world.vesel.ViselVertex;
-import net.minecraft.world.vesel.ViselVisual;
-import java.util.ArrayList;
-import java.util.List;
+import com.mojang.block3d.Vector3f;
 
 public class SchematicRenderer {
     private boolean renderEnabled = true;
@@ -22,38 +16,35 @@ public class SchematicRenderer {
     public void toggleRender() { renderEnabled = !renderEnabled; }
     public boolean isRenderEnabled() { return renderEnabled; }
 
-    public void renderSchematicOutline(SchematicManager manager, Matrix4f projectionMatrix, Matrix4f poseMatrix) {
+    public void renderSchematicOutline(SchematicManager manager, Matrix4f projectionMatrix, Matrix4f poseMatrix, Matrix4f cameraMatrix) {
         if (!renderEnabled || !manager.hasSchematic()) return;
         SchematicData data = manager.getActiveSchematic();
         if (data == null) return;
 
         Minecraft mc = Minecraft.getInstance();
+        Vector3f cameraPos = mc.getCameraEntity().getPosition(0);
+
         for (SchematicRegion r : data.regions) {
-            renderRegionOutline(manager, r, projectionMatrix, poseMatrix);
+            renderRegionOutline(manager, r, cameraPos, projectionMatrix, poseMatrix, cameraMatrix);
         }
     }
 
-    private void renderRegionOutline(SchematicManager manager, SchematicRegion r, Matrix4f projectionMatrix, Matrix4f poseMatrix) {
-        Minecraft mc = Minecraft.getInstance();
+    private void renderRegionOutline(SchematicManager manager, SchematicRegion r, Vector3f cameraPos, Matrix4f projectionMatrix, Matrix4f poseMatrix, Matrix4f cameraMatrix) {
         BlockPos origin = manager.getPlacementOrigin();
         BlockPos size = r.size;
 
-        // Render bounding box wireframe
-        double x0 = origin.getX();
-        double y0 = origin.getY();
-        double z0 = origin.getZ();
+        // Draw bounding box using LevelRenderer.renderLineBox
+        double x0 = origin.getX() - cameraPos.x();
+        double y0 = origin.getY() - cameraPos.y();
+        double z0 = origin.getZ() - cameraPos.z();
         double x1 = x0 + size.getX();
         double y1 = y0 + size.getY();
         double z1 = z0 + size.getZ();
 
-        double cx = mc.gameRenderer.getMainCamera().getPosition().x();
-        double cy = mc.gameRenderer.getMainCamera().getPosition().y();
-        double cz = mc.gameRenderer.getMainCamera().getPosition().z();
+        // Green wireframe box
+        LevelRenderer.renderLineBox(projectionMatrix, poseMatrix, cameraMatrix, x0, y0, z0, x1, y1, z1, 0F, 1.0F, 0.0F, 0.5F);
 
-        List<ViselVisual> lines = new ArrayList<>();
-        drawWireBox(lines, x0, y0, z0, x1, y1, z1, cx, cy, cz, 0.0F, 1.0F, 0.0F, 0.5F);
-
-        // Render ghost blocks for current layer
+        // Render ghost blocks for current layer in layer mode
         if (manager.isLayerMode()) {
             int ymin = manager.getCurrentLayerMin();
             int ymax = manager.getCurrentLayerMax();
@@ -63,49 +54,15 @@ public class SchematicRenderer {
                         net.minecraft.world.level.block.state.BlockState bs = r.getBlockState(new BlockPos(x, y, z));
                         if (bs != null && !bs.isAir()) {
                             BlockPos wp = manager.transformPos(new BlockPos(x, y, z));
-                            double bx = wp.getX();
-                            double by = wp.getY();
-                            double bz = wp.getZ();
-                            drawWireBox(lines, bx, by, bz, bx + 1, by + 1, bz + 1, cx, cy, cz, 0.3F, 0.7F, 1.0F, 0.2F);
+                            double bx = wp.getX() - cameraPos.x();
+                            double by = wp.getY() - cameraPos.y();
+                            double bz = wp.getZ() - cameraPos.z();
+                            // Blue ghost block
+                            LevelRenderer.renderLineBox(projectionMatrix, poseMatrix, cameraMatrix, bx, by, bz, bx + 1, by + 1, bz + 1, 0.3F, 0.7F, 1.0F, 0.3F);
                         }
                     }
                 }
             }
         }
-
-        if (!lines.isEmpty()) {
-            double rX = cx - (mc.getWindow().getWidth() / 2.0);
-            double rY = cy - (mc.getWindow().getHeight() / 2.0);
-            double rZ = cz;
-            for (ViselVisual vv : lines) {
-                vv.setStartProad(vv.getStartProad().adjustAndClamp(mc.gameRenderer.defaultCamera(), rX, rY, rZ));
-                vv.setEndProad(vv.getEndProad().adjustAndClamp(mc.gameRenderer.defaultCamera(), rX, rY, rZ));
-            }
-        }
-
-        // Render via Minecraft's built-in renderer
-        mc.renderShapedBoxTranslucent(origin, origin.offset(s), mc.gameRenderer.getMinCamera(), lines, false);
-    }
-
-    private void drawWireBox(List<ViselVisual> lines, double x0, double y0, double z0, double x1, double y1, double z1, double cx, double cy, double cz, float r, float g, float b, float a) {
-        // Simple line rendering - 12 edges
-        addLine(lines, x0, y0, z0, x1, y0, z0, r, g, b, a);
-        addLine(lines, x0, y1, z0, x1, y1, z0, r, g, b, a);
-        addLine(lines, x0, y0, z1, x1, y0, z1, r, g, b, a);
-        addLine(lines, x0, y1, z1, x1, y1, z1, r, g, b, a);
-
-        addLine(lines, x0, y0, z0, x0, y1, z0, r, g, b, a);
-        addLine(lines, x1, y0, z0, x1, y1, z0, r, g, b, a);
-        addLine(lines, x0, y0, z1, x0, y1, z1, r, g, b, a);
-        addLine(lines, x1, y0, z1, x1, y1, z1, r, g, b, a);
-
-        addLine(lines, x0, y0, z0, x0, y0, z1, r, g, b, a);
-        addLine(lines, x1, y0, z0, x1, y0, z1, r, g, b, a);
-        addLine(lines, x0, y1, z0, x0, y1, z1, r, g, b, a);
-        addLine(lines, x1, y1, z0, x1, y1, z1, r, g, b, a);
-    }
-
-    private void addLine(List<ViselVisual> lines, double x0, double y0, double z0, double x1, double y1, double z1, float r, float g, float b, float a) {
-        lines.add(ViselWidget.newLine(x0, y0, z0, x1, y1, z1, r, g, b, a, a));
     }
 }
