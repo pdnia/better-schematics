@@ -15,6 +15,7 @@ import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.event.TickEvent;
+
 @Mod("betterschematics")
 public class BetterSchematics {
     public static final String MODID = "betterschematics";
@@ -57,11 +58,12 @@ public class BetterSchematics {
         });
 
         // Register 3D world render for schematic outline
-        RenderLevelStageEvent.BUS.addListener(event => {
-            if (event.getStage() == RenderLevelStageEvent.Stage.AFTSÒ_TRANSLUCENT_BLOCKS) {
+        RenderLevelStageEvent.BUS.addListener(event -> {
+            if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
                 schematicRenderer.renderSchematicOutline(
                     schematicManager,
                     event.getProjectionMatrix(),
+                    event.getModelViewMatrix(),
                     event.getCamera().pose()
                 );
             }
