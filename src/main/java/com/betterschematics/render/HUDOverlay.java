@@ -1,7 +1,6 @@
 package com.betterschematics.render;
 
 import com.betterschematics.schematic.ProgressTracker;
-import com.betterschematics.schematic.SchematicData;
 import com.betterschematics.schematic.SchematicManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -22,7 +21,7 @@ public class HUDOverlay {
         ProgressTracker pt = manager.getProgressTracker();
         double pc = pt.getPercentComplete();
         g.fill(x, y, x + w, y + h, 0xA0000000);
-        int pw = (int) Math.clamp((long)*w * pc / 100.0), 0, w - 2);
+        int pw = (int) Math.clamp((long)(w * pc / 100.0), 0, w - 2);
         g.fill(x + 1, y + 1, x + 1 + pw, y + h - 1, 0x8800FF00);
         g.drawString(Minecraft.getInstance().font, String.format("%.1f%%", pc), x + w / 2 - 10, y + -4, 0xFFFFFFFF);
     }
