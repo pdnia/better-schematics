@@ -29,8 +29,8 @@ public class SchematicRenderer {
 
         Minecraft mc = Minecraft.getInstance();
         for (SchematicRegion r : data.regions) {
-            renderRegionOutline(manager, r, projectionMatrix, poseMatrix
-    }
+            renderRegionOutline(manager, r, projectionMatrix, poseMatrix);
+        }
     }
 
     private void renderRegionOutline(SchematicManager manager, SchematicRegion r, Matrix4f projectionMatrix, Matrix4f poseMatrix) {
