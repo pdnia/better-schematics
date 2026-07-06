@@ -48,7 +48,6 @@ public class SchematicRenderer {
             VertexConsumer outlineVc = buffers.getBuffer(RenderType.lines());
             BlockPos origin = manager.getPlacementOrigin();
             BlockPos endPos = manager.transformPos(new BlockPos(size.getX() - 1, size.getY() - 1, size.getZ() - 1));
-            // Adjust bounds to account for rotation/mirror
             int minX = Math.min(origin.getX(), endPos.getX());
             int minY = Math.min(origin.getY(), endPos.getY());
             int minZ = Math.min(origin.getZ(), endPos.getZ());
@@ -87,13 +86,13 @@ public class SchematicRenderer {
         float b = (color & 0xFF) / 255f;
         float a = ((color >> 24) & 0xFF) / 255f;
 
-        // Bottom square (y1)
+        // Bottom square
         addLine(vc, mat, x1, y1, z1, x2, y1, z1, r, g, b, a);
         addLine(vc, mat, x2, y1, z1, x2, y1, z2, r, g, b, a);
         addLine(vc, mat, x2, y1, z2, x1, y1, z2, r, g, b, a);
         addLine(vc, mat, x1, y1, z2, x1, y1, z1, r, g, b, a);
 
-        // Top square (y2)
+        // Top square
         addLine(vc, mat, x1, y2, z1, x2, y2, z1, r, g, b, a);
         addLine(vc, mat, x2, y2, z1, x2, y2, z2, r, g, b, a);
         addLine(vc, mat, x2, y2, z2, x1, y2, z2, r, g, b, a);
