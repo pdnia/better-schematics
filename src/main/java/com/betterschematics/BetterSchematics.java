@@ -5,9 +5,14 @@ import com.betterschematics.gui.SchematicScreen;
 import com.betterschematics.render.HUDOverlay;
 import com.betterschematics.render.SchematicRenderer;
 import com.betterschematics.schematic.SchematicManager;
+import com.mojang.blaze3d.framegraph.FramePass;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.LevelTargetBundle;
+import net.minecraft.client.renderer.state.LevelRenderState;
 import net.minecraft.resources.Identifier;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.FramePassManager;
+import net.minecraftforge.client.event.AddFramePassEvent;
 import net.minecraftforge.client.event.AddGuiOverlayLayersEvent;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
@@ -40,6 +45,8 @@ public class BetterSchematics {
         TickEvent.ClientTickEvent.Pre.BUS.addListener(event -> onClientTick());
         RegisterKeyMappingsEvent.BUS.addListener(BetterSchematicsConfig::registerKeys);
 
+        AddFramePassEvent.BUS.addListener(this::onAddFramePass);
+
         AddGuiOverlayLayersEvent.BUS.addListener(event -> {
             var layers = event.getLayeredDraw();
             var modLayerName = Identifier.fromNamespaceAndPath(MODID, "better_schematics_overlay");
@@ -49,6 +56,22 @@ public class BetterSchematics {
                 (ggx, dt) -> hudOverlay.render(ggx, 0.0f)
             );
         });
+    }
+
+    private void onAddFramePass(AddFramePassEvent event) {
+        event.addPass(
+            Identifier.fromNamespaceAndPath(MODID, "schematic_wireframe"),
+            new FramePassManager.PassDefinition() {
+                @Override
+                public void extracts(LevelTargetBundle bundle, FramePass pass) {
+                    pass.readsAndWrites(bundle.main());
+                }
+                @Override
+                public void executes(LevelRenderState state) {
+                    renderer.renderWireframe();
+                }
+            }
+        );
     }
 
     private void onKeyInput(InputEvent.Key event) {
