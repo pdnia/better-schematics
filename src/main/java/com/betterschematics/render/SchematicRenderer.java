@@ -3,12 +3,13 @@ package com.betterschematics.render;
 import com.betterschematics.schematic.SchematicData;
 import com.betterschematics.schematic.SchematicManager;
 import com.betterschematics.schematic.SchematicRegion;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.*;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -39,12 +40,7 @@ public class SchematicRenderer {
         if (region == null) return;
         BlockPos size = region.size;
 
-        RenderSystem.enableDepthTest();
-        RenderSystem.depthMask(false);
-        RenderSystem.disableCull();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-
-        Tesselator tess = Tesselator.getInstance();
+        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
 
         BlockPos origin = manager.getPlacementOrigin();
         BlockPos endPos = manager.transformPos(new BlockPos(size.getX() - 1, size.getY() - 1, size.getZ() - 1));
@@ -55,11 +51,11 @@ public class SchematicRenderer {
         int maxY = Math.max(origin.getY(), endPos.getY()) + 1;
         int maxZ = Math.max(origin.getZ(), endPos.getZ()) + 1;
 
-        BufferBuilder bb = tess.begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
-        addWireframeBox(bb, mat, minX, minY, minZ, maxX, maxY, maxZ, 1f, 1f, 0.867f, 0.5f);
-        BufferUploader.drawWithShader(bb.buildOrThrow());
+        VertexConsumer outlineVc = buffers.getBuffer(RenderPipelines.LINES);
+        addWireframeBox(outlineVc, mat, minX, minY, minZ, maxX, maxY, maxZ, 1f, 1f, 0.867f, 0.5f);
+        buffers.endBatch(RenderPipelines.LINES);
 
-        bb = tess.begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
+        VertexConsumer vc = buffers.getBuffer(RenderPipelines.LINES);
         for (int y = 0; y < size.getY(); y++) {
             for (int z = 0; z < size.getZ(); z++) {
                 for (int x = 0; x < size.getX(); x++) {
@@ -69,46 +65,37 @@ public class SchematicRenderer {
                     BlockPos worldPos = manager.transformPos(local);
                     BlockState actual = mc.level.getBlockState(worldPos);
                     boolean match = expected.equals(actual);
-                    addWireframeBox(bb, mat, worldPos.getX(), worldPos.getY(), worldPos.getZ(),
+                    addWireframeBox(vc, mat,
+                            worldPos.getX(), worldPos.getY(), worldPos.getZ(),
                             worldPos.getX() + 1, worldPos.getY() + 1, worldPos.getZ() + 1,
                             0f, match ? 0.4f : 0f, match ? 0f : 0.4f, 0.4f);
                 }
             }
         }
-        BufferUploader.drawWithShader(bb.buildOrThrow());
-
-        RenderSystem.depthMask(true);
-        RenderSystem.enableCull();
-        RenderSystem.disableDepthTest();
+        buffers.endBatch(RenderPipelines.LINES);
     }
 
-    private void addWireframeBox(BufferBuilder bb, Matrix4f mat,
-                                  float x1, float y1, float z1,
-                                  float x2, float y2, float z2,
+    private void addWireframeBox(VertexConsumer vc, Matrix4f mat,
+                                  float x1, float y1, float z1, float x2, float y2, float z2,
                                   float r, float g, float b, float a) {
-        bb.addVertex(mat, x1, y1, z1).setColor(r, g, b, a);
-        bb.addVertex(mat, x2, y1, z1).setColor(r, g, b, a);
-        bb.addVertex(mat, x2, y1, z1).setColor(r, g, b, a);
-        bb.addVertex(mat, x2, y1, z2).setColor(r, g, b, a);
-        bb.addVertex(mat, x2, y1, z2).setColor(r, g, b, a);
-        bb.addVertex(mat, x1, y1, z2).setColor(r, g, b, a);
-        bb.addVertex(mat, x1, y1, z2).setColor(r, g, b, a);
-        bb.addVertex(mat, x1, y1, z1).setColor(r, g, b, a);
-        bb.addVertex(mat, x1, y2, z1).setColor(r, g, b, a);
-        bb.addVertex(mat, x2, y2, z1).setColor(r, g, b, a);
-        bb.addVertex(mat, x2, y2, z1).setColor(r, g, b, a);
-        bb.addVertex(mat, x2, y2, z2).setColor(r, g, b, a);
-        bb.addVertex(mat, x2, y2, z2).setColor(r, g, b, a);
-        bb.addVertex(mat, x1, y2, z2).setColor(r, g, b, a);
-        bb.addVertex(mat, x1, y2, z2).setColor(r, g, b, a);
-        bb.addVertex(mat, x1, y2, z1).setColor(r, g, b, a);
-        bb.addVertex(mat, x1, y1, z1).setColor(r, g, b, a);
-        bb.addVertex(mat, x1, y2, z1).setColor(r, g, b, a);
-        bb.addVertex(mat, x2, y1, z1).setColor(r, g, b, a);
-        bb.addVertex(mat, x2, y2, z1).setColor(r, g, b, a);
-        bb.addVertex(mat, x2, y1, z2).setColor(r, g, b, a);
-        bb.addVertex(mat, x2, y2, z2).setColor(r, g, b, a);
-        bb.addVertex(mat, x1, y1, z2).setColor(r, g, b, a);
-        bb.addVertex(mat, x1, y2, z2).setColor(r, g, b, a);
+        addLine(vc, mat, x1, y1, z1, x2, y1, z1, r, g, b, a);
+        addLine(vc, mat, x2, y1, z1, x2, y1, z2, r, g, b, a);
+        addLine(vc, mat, x2, y1, z2, x1, y1, z2, r, g, b, a);
+        addLine(vc, mat, x1, y1, z2, x1, y1, z1, r, g, b, a);
+        addLine(vc, mat, x1, y2, z1, x2, y2, z1, r, g, b, a);
+        addLine(vc, mat, x2, y2, z1, x2, y2, z2, r, g, b, a);
+        addLine(vc, mat, x2, y2, z2, x1, y2, z2, r, g, b, a);
+        addLine(vc, mat, x1, y2, z2, x1, y2, z1, r, g, b, a);
+        addLine(vc, mat, x1, y1, z1, x1, y2, z1, r, g, b, a);
+        addLine(vc, mat, x2, y1, z1, x2, y2, z1, r, g, b, a);
+        addLine(vc, mat, x2, y1, z2, x2, y2, z2, r, g, b, a);
+        addLine(vc, mat, x1, y1, z2, x1, y2, z2, r, g, b, a);
+    }
+
+    private void addLine(VertexConsumer vc, Matrix4f mat,
+                         float x1, float y1, float z1, float x2, float y2, float z2,
+                         float r, float g, float b, float a) {
+        vc.addVertex(mat, x1, y1, z1).setColor(r, g, b, a);
+        vc.addVertex(mat, x2, y2, z2).setColor(r, g, b, a);
     }
 }
