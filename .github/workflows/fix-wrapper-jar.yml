@@ -1,0 +1,25 @@
+name: Fix Gradle Wrapper JAR
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix-wrapper:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download correct Gradle wrapper JAR
+        run: |
+          curl -L -o gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v9.3.0/gradle/wrapper/gradle-wrapper.jar
+      
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add gradle/wrapper/gradle-wrapper.jar
+          git commit -m "fix: replace broken gradle-wrapper.jar with correct 46KB file" || exit 0
+          git push
