@@ -1,0 +1,8 @@
+{
+  "betterschematics.keycategory": "Better Schematics",
+  "betterschematics.key.open_gui": "Open Schematic GUI",
+  "betterschematics.key.execute_place": "Place Next Block",
+  "betterschematics.key.toggle_render": "Toggle Wireframe Render",
+  "betterschematics.key.layer_up": "Layer Up",
+  "betterschematics.key.layer_down": "Layer Down"
+}
