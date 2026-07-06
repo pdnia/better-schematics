@@ -8,9 +8,7 @@ import com.betterschematics.schematic.SchematicManager;
 import com.mojang.logging.LogUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.slf4j.Logger;
 
@@ -30,7 +28,8 @@ public class BetterSchematics {
         this.renderer = new SchematicRenderer(schematicManager);
         this.hudOverlay = new HUDOverlay(schematicManager);
 
-        MinecraftForge.EVENT_BUS.register(this);
+        // EventBus 7 via addListener (compatibility shim)
+        MinecraftForge.EVENT_BUS.addListener(this::onKeyInput);
     }
 
     public static BetterSchematics getInstance() { return instance; }
@@ -38,8 +37,7 @@ public class BetterSchematics {
     public SchematicRenderer getRenderer() { return renderer; }
     public HUDOverlay getHudOverlay() { return hudOverlay; }
 
-    @SubscribeEvent
-    public void onKeyInput(InputEvent.Key event) {
+    private void onKeyInput(InputEvent.Key event) {
         if (Minecraft.getInstance().player == null) return;
         while (BetterSchematicsConfig.openGuiKey.consumeClick()) {
             Minecraft.getInstance().setScreen(new SchematicScreen());
@@ -55,13 +53,6 @@ public class BetterSchematics {
         }
         while (BetterSchematicsConfig.layerDownKey.consumeClick()) {
             schematicManager.shiftLayerDown();
-        }
-    }
-
-    @SubscribeEvent
-    public void onRenderWorldLast(RenderLevelStageEvent event) {
-        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT) {
-            renderer.render(event.getPoseStack(), event.getCamera(), event.getPartialTick());
         }
     }
 }
