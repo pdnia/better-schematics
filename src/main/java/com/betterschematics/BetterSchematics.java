@@ -6,8 +6,10 @@ import com.betterschematics.render.HUDOverlay;
 import com.betterschematics.render.SchematicRenderer;
 import com.betterschematics.schematic.SchematicManager;
 import com.mojang.logging.LogUtils;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.slf4j.Logger;
 
@@ -27,8 +29,8 @@ public class BetterSchematics {
         this.renderer = new SchematicRenderer(schematicManager);
         this.hudOverlay = new HUDOverlay(schematicManager);
 
-        // EventBus 7: use each event's BUS field
         InputEvent.Key.BUS.addListener(this::onKeyInput);
+        TickEvent.RenderTickEvent.Post.BUS.addListener(this::onRenderTick);
     }
 
     public static BetterSchematics getInstance() { return instance; }
@@ -53,5 +55,12 @@ public class BetterSchematics {
         while (BetterSchematicsConfig.layerDownKey.consumeClick()) {
             schematicManager.shiftLayerDown();
         }
+    }
+
+    private void onRenderTick(TickEvent.RenderTickEvent.Post event) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || mc.player == null) return;
+        Camera camera = mc.gameRenderer.getMainCamera();
+        renderer.render(camera, event.getTimer());
     }
 }
