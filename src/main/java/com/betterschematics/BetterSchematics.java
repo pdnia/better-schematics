@@ -3,6 +3,7 @@ package com.betterschematics;
 import com.betterschematics.config.BetterSchematicsConfig;
 import com.betterschematics.gui.SchematicScreen;
 import com.betterschematics.render.HUDOverlay;
+import com.betterschematics.render.SchematicRenderer;
 import com.betterschematics.schematic.SchematicData;
 import com.betterschematics.schematic.SchematicManager;
 import net.minecraft.client.Minecraft;
@@ -12,6 +13,8 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.AddGuiOverlayLayersEvent;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;
@@ -22,11 +25,13 @@ public class BetterSchematics {
 
     private static BetterSchematics instance;
     private final SchematicManager schematicManager;
+    private final SchematicRenderer renderer;
     private final HUDOverlay hudOverlay;
 
     public BetterSchematics() {
         instance = this;
         this.schematicManager = new SchematicManager();
+        this.renderer = new SchematicRenderer(schematicManager);
         this.hudOverlay = new HUDOverlay(schematicManager);
 
         if (FMLEnvironment.dist == Dist.CLIENT) {
@@ -38,6 +43,7 @@ public class BetterSchematics {
         InputEvent.Key.BUS.addListener(this::onKeyInput);
         TickEvent.ClientTickEvent.Pre.BUS.addListener(event -> onClientTick());
         RegisterKeyMappingsEvent.BUS.addListener(BetterSchematicsConfig::registerKeys);
+        MinecraftForge.EVENT_BUS.addListener(this::onRenderWorldLast);
 
         AddGuiOverlayLayersEvent.BUS.addListener(event -> {
             var layers = event.getLayeredDraw();
@@ -45,9 +51,15 @@ public class BetterSchematics {
             layers.addAbove(
                 Identifier.withDefaultNamespace("hotbar"),
                 modLayerName,
-                (ggx, dt) -> renderOverlay(ggx)
+                (ggx, dt) -> hudOverlay.render(ggx, dt.getGameTimeDeltaTicks())
             );
         });
+    }
+
+    private void onRenderWorldLast(RenderLevelStageEvent event) {
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT) {
+            renderer.render(event.getPoseStack().last().pose(), event.getProjectionMatrix(), event.getCamera(), event.getPartialTick().getGameTimeDeltaTicks());
+        }
     }
 
     private void onKeyInput(InputEvent.Key event) {
@@ -60,6 +72,9 @@ public class BetterSchematics {
         while (BetterSchematicsConfig.executePlaceKey != null && BetterSchematicsConfig.executePlaceKey.consumeClick()) {
             schematicManager.placeNextBlock();
         }
+        while (BetterSchematicsConfig.toggleRenderKey != null && BetterSchematicsConfig.toggleRenderKey.consumeClick()) {
+            renderer.toggleRender();
+        }
         while (BetterSchematicsConfig.layerUpKey != null && BetterSchematicsConfig.layerUpKey.consumeClick()) {
             schematicManager.shiftLayerUp();
         }
@@ -70,19 +85,8 @@ public class BetterSchematics {
 
     private void onClientTick() { }
 
-    private void renderOverlay(GuiGraphics g) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.level == null) return;
-        SchematicData schematic = schematicManager.getActiveSchematic();
-        if (schematic == null) return;
-
-        int sw = mc.getWindow().getGuiScaledWidth();
-        g.drawString(mc.font, "BetterSchematics", sw / 2 - 40, 10, 0xFFFFFFFF);
-        g.drawString(mc.font, "Schematic: " + schematic.name, sw / 2 - 40, 20, 0xFFFFFFFF);
-        g.drawString(mc.font, "Layer: " + schematicManager.getCurrentLayerMin(), sw / 2 - 40, 30, 0xFFFFFFFF);
-    }
-
     public static BetterSchematics getInstance() { return instance; }
     public SchematicManager getSchematicManager() { return schematicManager; }
     public HUDOverlay getHudOverlay() { return hudOverlay; }
+    public SchematicRenderer getRenderer() { return renderer; }
 }
