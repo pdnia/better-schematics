@@ -26,7 +26,7 @@ public class SchematicRenderer {
         false,
         true,
         RenderPipelines.LINES,
-        RenderType.CompositeState.builder().createCompositeState(RenderType.OutlineProperty.NONE)
+        null
     );
 
     public SchematicRenderer(SchematicManager manager) { this.manager = manager; }
