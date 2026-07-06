@@ -16,15 +16,27 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
+import java.util.Map;
 
 public class SchematicRenderer {
     private final SchematicManager manager;
     private boolean renderEnabled = true;
 
-    private static final RenderType LINES_TYPE = RenderType.create(
-        "betterschematics:lines",
-        RenderSetup.builder(RenderPipelines.LINES).get()
+    private static final RenderSetup LINES_SETUP = new RenderSetup(
+        RenderPipelines.LINES,
+        Map.of(),
+        false,
+        false,
+        null,
+        null,
+        null,
+        null,
+        false,
+        false,
+        786432
     );
+
+    private static final RenderType LINES_TYPE = RenderType.create("betterschematics:lines", LINES_SETUP);
 
     public SchematicRenderer(SchematicManager manager) { this.manager = manager; }
     public void toggleRender() { renderEnabled = !renderEnabled; }
@@ -48,23 +60,22 @@ public class SchematicRenderer {
         BlockPos size = region.size;
 
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
-
         BlockPos origin = manager.getPlacementOrigin();
-        BlockPos endPos = manager.transformPos(new BlockPos(size.getX() - 1, size.getY() - 1, size.getZ() - 1));
+        BlockPos endPos = manager.transformPos(new BlockPos(size.getX()-1, size.getY()-1, size.getZ()-1));
         int minX = Math.min(origin.getX(), endPos.getX());
         int minY = Math.min(origin.getY(), endPos.getY());
         int minZ = Math.min(origin.getZ(), endPos.getZ());
-        int maxX = Math.max(origin.getX(), endPos.getX()) + 1;
-        int maxY = Math.max(origin.getY(), endPos.getY()) + 1;
-        int maxZ = Math.max(origin.getZ(), endPos.getZ()) + 1;
+        int maxX = Math.max(origin.getX(), endPos.getX())+1;
+        int maxY = Math.max(origin.getY(), endPos.getY())+1;
+        int maxZ = Math.max(origin.getZ(), endPos.getZ())+1;
 
         VertexConsumer outlineVc = buffers.getBuffer(LINES_TYPE);
         addWireframeBox(outlineVc, mat, minX, minY, minZ, maxX, maxY, maxZ, 1f, 1f, 0.867f, 0.5f);
         buffers.endBatch(LINES_TYPE);
 
         VertexConsumer vc = buffers.getBuffer(LINES_TYPE);
-        for (int y = 0; y < size.getY(); y++) {
-            for (int z = 0; z < size.getZ(); z++) {
+        for (int y = 0; y < size.getY(); y++)
+            for (int z = 0; z < size.getZ(); z++)
                 for (int x = 0; x < size.getX(); x++) {
                     BlockPos local = new BlockPos(x, y, z);
                     BlockState expected = region.getBlockState(local);
@@ -72,13 +83,10 @@ public class SchematicRenderer {
                     BlockPos worldPos = manager.transformPos(local);
                     BlockState actual = mc.level.getBlockState(worldPos);
                     boolean match = expected.equals(actual);
-                    addWireframeBox(vc, mat,
-                            worldPos.getX(), worldPos.getY(), worldPos.getZ(),
-                            worldPos.getX() + 1, worldPos.getY() + 1, worldPos.getZ() + 1,
-                            0f, match ? 0.4f : 0f, match ? 0f : 0.4f, 0.4f);
+                    addWireframeBox(vc, mat, worldPos.getX(), worldPos.getY(), worldPos.getZ(),
+                        worldPos.getX()+1, worldPos.getY()+1, worldPos.getZ()+1,
+                        0f, match?0.4f:0f, match?0f:0.4f, 0.4f);
                 }
-            }
-        }
         buffers.endBatch(LINES_TYPE);
     }
 
