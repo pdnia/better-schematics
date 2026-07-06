@@ -4,9 +4,6 @@ buildscript {
         maven { url = 'https://maven.minecraftforge.net/' }
         maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
     }
-    dependencies {
-        classpath 'org.spongepowered:mixingradle:0.7.+'
-    }
 }
 
 plugins {
@@ -16,8 +13,6 @@ plugins {
     id 'maven-publish'
     id 'net.minecraftforge.gradle' version '[7.0.29,8)'
 }
-
-apply plugin: 'org.spongepowered.mixin'
 
 version = mod_version
 group = mod_group_id
@@ -62,9 +57,11 @@ dependencies {
     annotationProcessor 'org.spongepowered:mixin:0.8.7:processor'
 }
 
-mixin {
-    add sourceSets.main, 'betterschematics.refmap.json'
-    config 'betterschematics.mixins.json'
+// Mixin configuration without MixinGradle plugin (compatible with Gradle 9.x)
+compileJava {
+    options.compilerArgs += [
+        '-Amixin.refmap=betterschematics.refmap.json'
+    ]
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -94,10 +91,7 @@ jar {
             'Implementation-Title': project.name,
             'Implementation-Version': project.jar.archiveVersion,
             'Implementation-Vendor': mod_authors,
-            'TweakClass': 'org.spongepowered.asm.launch.MixinTweaker',
-            'MixinConfigs': 'betterschematics.mixins.json',
-            'FMLCorePluginContainsFMLMod': 'true',
-            'ForceLoadAsMod': 'true'
+            'MixinConfigs': 'betterschematics.mixins.json'
         ])
     }
 }
