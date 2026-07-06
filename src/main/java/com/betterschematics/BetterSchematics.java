@@ -9,8 +9,8 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import org.slf4j.Logger;
 
@@ -24,14 +24,14 @@ public class BetterSchematics {
     private final SchematicRenderer renderer;
     private final HUDOverlay hudOverlay;
 
-    public BetterSchematics(IEventBus modEventBus) {
+    public BetterSchematics() {
         instance = this;
         this.schematicManager = new SchematicManager();
         this.renderer = new SchematicRenderer(schematicManager);
         this.hudOverlay = new HUDOverlay(schematicManager);
 
-        // Register key mappings on mod event bus
-        modEventBus.addListener(BetterSchematicsConfig::registerKeys);
+        // Register key mappings - RegisterKeyMappingsEvent uses the same BUS pattern
+        RegisterKeyMappingsEvent.BUS.addListener(BetterSchematicsConfig::registerKeys);
 
         // Register forge event listeners
         InputEvent.Key.BUS.addListener(this::onKeyInput);
