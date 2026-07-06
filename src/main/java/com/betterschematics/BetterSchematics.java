@@ -3,9 +3,13 @@ package com.betterschematics;
 import com.betterschematics.config.BetterSchematicsConfig;
 import com.betterschematics.gui.SchematicScreen;
 import com.betterschematics.render.HUDOverlay;
+import com.betterschematics.schematic.SchematicData;
 import com.betterschematics.schematic.SchematicManager;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.AddGuiOverlayLayersEvent;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.event.TickEvent;
@@ -34,6 +38,16 @@ public class BetterSchematics {
         InputEvent.Key.BUS.addListener(this::onKeyInput);
         TickEvent.ClientTickEvent.Pre.BUS.addListener(event -> onClientTick());
         RegisterKeyMappingsEvent.BUS.addListener(BetterSchematicsConfig::registerKeys);
+
+        AddGuiOverlayLayersEvent.BUS.addListener(event -> {
+            var layers = event.getLayeredDraw();
+            var modLayerName = ResourceLocation.fromNamespaceAndPath(MODID, "better_schematics_overlay");
+            layers.addAbove(
+                ResourceLocation.withDefaultNamespace("hotbar"),
+                modLayerName,
+                (ggx, dt) -> renderOverlay(ggx)
+            );
+        });
     }
 
     private void onKeyInput(InputEvent.Key event) {
@@ -55,6 +69,18 @@ public class BetterSchematics {
     }
 
     private void onClientTick() { }
+
+    private void renderOverlay(GuiGraphics g) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.level == null) return;
+        SchematicData schematic = schematicManager.getActiveSchematic();
+        if (schematic == null) return;
+
+        int sw = mc.getWindow().getGuiScaledWidth();
+        g.drawString(mc.font, "BetterSchematics", sw / 2 - 40, 10, 0xFFFFFFFF);
+        g.drawString(mc.font, "Schematic: " + schematic.name, sw / 2 - 40, 20, 0xFFFFFFFF);
+        g.drawString(mc.font, "Layer: " + schematicManager.getCurrentLayerMin(), sw / 2 - 40, 30, 0xFFFFFFFF);
+    }
 
     public static BetterSchematics getInstance() { return instance; }
     public SchematicManager getSchematicManager() { return schematicManager; }
