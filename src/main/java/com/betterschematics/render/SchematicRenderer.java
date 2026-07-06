@@ -16,27 +16,15 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
-import java.util.Map;
 
 public class SchematicRenderer {
     private final SchematicManager manager;
     private boolean renderEnabled = true;
 
-    private static final RenderSetup LINES_SETUP = new RenderSetup(
-        RenderPipelines.LINES,
-        Map.of(),
-        false,
-        false,
-        null,
-        null,
-        null,
-        null,
-        false,
-        false,
-        786432
+    private static final RenderType LINES_TYPE = RenderType.create(
+        "betterschematics:lines",
+        RenderSetup.builder(RenderPipelines.LINES).createRenderSetup()
     );
-
-    private static final RenderType LINES_TYPE = RenderType.create("betterschematics:lines", LINES_SETUP);
 
     public SchematicRenderer(SchematicManager manager) { this.manager = manager; }
     public void toggleRender() { renderEnabled = !renderEnabled; }
