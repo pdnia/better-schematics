@@ -76,6 +76,7 @@ public class SchematicManager {
     public void placeNextBlock() {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null || schematic == null) return;
+        if (!mc.player.getAbilities().instabuild) return;
         SchematicRegion r = schematic.getMainRegion();
         if (r == null) return;
         BlockPos s = r.size;
@@ -87,6 +88,7 @@ public class SchematicManager {
                         BlockPos wp = transformPos(new BlockPos(x, y, z));
                         if (!expected.equals(mc.level.getBlockState(wp))) {
                             nextBlockTarget = wp;
+                            mc.level.setBlock(wp, expected, 3);
                             return;
                         }
                     }
