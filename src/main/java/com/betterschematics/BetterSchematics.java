@@ -5,24 +5,19 @@ import com.betterschematics.gui.SchematicScreen;
 import com.betterschematics.render.HUDOverlay;
 import com.betterschematics.render.SchematicRenderer;
 import com.betterschematics.schematic.SchematicManager;
-import com.mojang.blaze3d.framegraph.FramePass;
+import com.mojang.logging.LogUtils;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.LevelTargetBundle;
-import net.minecraft.client.renderer.state.LevelRenderState;
-import net.minecraft.resources.Identifier;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.FramePassManager;
-import net.minecraftforge.client.event.AddFramePassEvent;
-import net.minecraftforge.client.event.AddGuiOverlayLayersEvent;
 import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
-import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.loading.FMLEnvironment;
+import org.slf4j.Logger;
 
 @Mod("betterschematics")
 public class BetterSchematics {
     public static final String MODID = "betterschematics";
+    public static final Logger LOGGER = LogUtils.getLogger();
 
     private static BetterSchematics instance;
     private final SchematicManager schematicManager;
@@ -35,70 +30,38 @@ public class BetterSchematics {
         this.renderer = new SchematicRenderer(schematicManager);
         this.hudOverlay = new HUDOverlay(schematicManager);
 
-        if (FMLEnvironment.dist == Dist.CLIENT) {
-            registerClientEvents();
+        MinecraftForge.EVENT_BUS.register(this);
+    }
+
+    public static BetterSchematics getInstance() { return instance; }
+    public SchematicManager getSchematicManager() { return schematicManager; }
+    public SchematicRenderer getRenderer() { return renderer; }
+    public HUDOverlay getHudOverlay() { return hudOverlay; }
+
+    @SubscribeEvent
+    public void onKeyInput(InputEvent.Key event) {
+        if (Minecraft.getInstance().player == null) return;
+        while (BetterSchematicsConfig.openGuiKey.consumeClick()) {
+            Minecraft.getInstance().setScreen(new SchematicScreen());
         }
-    }
-
-    private void registerClientEvents() {
-        InputEvent.Key.BUS.addListener(this::onKeyInput);
-        TickEvent.ClientTickEvent.Pre.BUS.addListener(event -> onClientTick());
-        RegisterKeyMappingsEvent.BUS.addListener(BetterSchematicsConfig::registerKeys);
-
-        AddFramePassEvent.BUS.addListener(this::onAddFramePass);
-
-        AddGuiOverlayLayersEvent.BUS.addListener(event -> {
-            var layers = event.getLayeredDraw();
-            var modLayerName = Identifier.fromNamespaceAndPath(MODID, "better_schematics_overlay");
-            layers.addAbove(
-                Identifier.withDefaultNamespace("hotbar"),
-                modLayerName,
-                (ggx, dt) -> hudOverlay.render(ggx, 0.0f)
-            );
-        });
-    }
-
-    private void onAddFramePass(AddFramePassEvent event) {
-        event.addPass(
-            Identifier.fromNamespaceAndPath(MODID, "schematic_wireframe"),
-            new FramePassManager.PassDefinition() {
-                @Override
-                public void extracts(LevelTargetBundle bundle, FramePass pass) {
-                    pass.readsAndWrites(bundle.main());
-                }
-                @Override
-                public void executes(LevelRenderState state) {
-                    renderer.renderWireframe();
-                }
-            }
-        );
-    }
-
-    private void onKeyInput(InputEvent.Key event) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null) return;
-
-        while (BetterSchematicsConfig.openGuiKey != null && BetterSchematicsConfig.openGuiKey.consumeClick()) {
-            mc.setScreen(new SchematicScreen());
-        }
-        while (BetterSchematicsConfig.executePlaceKey != null && BetterSchematicsConfig.executePlaceKey.consumeClick()) {
+        while (BetterSchematicsConfig.executePlaceKey.consumeClick()) {
             schematicManager.placeNextBlock();
         }
-        while (BetterSchematicsConfig.toggleRenderKey != null && BetterSchematicsConfig.toggleRenderKey.consumeClick()) {
+        while (BetterSchematicsConfig.toggleRenderKey.consumeClick()) {
             renderer.toggleRender();
         }
-        while (BetterSchematicsConfig.layerUpKey != null && BetterSchematicsConfig.layerUpKey.consumeClick()) {
+        while (BetterSchematicsConfig.layerUpKey.consumeClick()) {
             schematicManager.shiftLayerUp();
         }
-        while (BetterSchematicsConfig.layerDownKey != null && BetterSchematicsConfig.layerDownKey.consumeClick()) {
+        while (BetterSchematicsConfig.layerDownKey.consumeClick()) {
             schematicManager.shiftLayerDown();
         }
     }
 
-    private void onClientTick() { }
-
-    public static BetterSchematics getInstance() { return instance; }
-    public SchematicManager getSchematicManager() { return schematicManager; }
-    public HUDOverlay getHudOverlay() { return hudOverlay; }
-    public SchematicRenderer getRenderer() { return renderer; }
+    @SubscribeEvent
+    public void onRenderWorldLast(RenderLevelStageEvent event) {
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT) {
+            renderer.render(event.getPoseStack(), event.getCamera(), event.getPartialTick());
+        }
+    }
 }
