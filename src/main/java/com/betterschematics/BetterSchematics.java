@@ -7,7 +7,7 @@ import com.betterschematics.schematic.SchematicData;
 import com.betterschematics.schematic.SchematicManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.AddGuiOverlayLayersEvent;
 import net.minecraftforge.client.event.InputEvent;
@@ -41,9 +41,9 @@ public class BetterSchematics {
 
         AddGuiOverlayLayersEvent.BUS.addListener(event -> {
             var layers = event.getLayeredDraw();
-            var modLayerName = ResourceLocation.fromNamespaceAndPath(MODID, "better_schematics_overlay");
+            var modLayerName = Identifier.fromNamespaceAndPath(MODID, "better_schematics_overlay");
             layers.addAbove(
-                ResourceLocation.withDefaultNamespace("hotbar"),
+                Identifier.withDefaultNamespace("hotbar"),
                 modLayerName,
                 (ggx, dt) -> renderOverlay(ggx)
             );
