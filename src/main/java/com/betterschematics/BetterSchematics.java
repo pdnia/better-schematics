@@ -4,17 +4,13 @@ import com.betterschematics.config.BetterSchematicsConfig;
 import com.betterschematics.gui.SchematicScreen;
 import com.betterschematics.render.HUDOverlay;
 import com.betterschematics.render.SchematicRenderer;
-import com.betterschematics.schematic.SchematicData;
 import com.betterschematics.schematic.SchematicManager;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.Identifier;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.AddGuiOverlayLayersEvent;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;
@@ -43,7 +39,6 @@ public class BetterSchematics {
         InputEvent.Key.BUS.addListener(this::onKeyInput);
         TickEvent.ClientTickEvent.Pre.BUS.addListener(event -> onClientTick());
         RegisterKeyMappingsEvent.BUS.addListener(BetterSchematicsConfig::registerKeys);
-        MinecraftForge.EVENT_BUS.addListener(this::onRenderWorldLast);
 
         AddGuiOverlayLayersEvent.BUS.addListener(event -> {
             var layers = event.getLayeredDraw();
@@ -51,15 +46,9 @@ public class BetterSchematics {
             layers.addAbove(
                 Identifier.withDefaultNamespace("hotbar"),
                 modLayerName,
-                (ggx, dt) -> hudOverlay.render(ggx, dt.getGameTimeDeltaTicks())
+                (ggx, dt) -> hudOverlay.render(ggx, 0.0f)
             );
         });
-    }
-
-    private void onRenderWorldLast(RenderLevelStageEvent event) {
-        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT) {
-            renderer.render(event.getPoseStack().last().pose(), event.getProjectionMatrix(), event.getCamera(), event.getPartialTick().getGameTimeDeltaTicks());
-        }
     }
 
     private void onKeyInput(InputEvent.Key event) {
