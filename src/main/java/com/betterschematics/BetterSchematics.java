@@ -8,7 +8,6 @@ import com.betterschematics.schematic.SchematicManager;
 import com.mojang.logging.LogUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import org.slf4j.Logger;
 
@@ -28,8 +27,8 @@ public class BetterSchematics {
         this.renderer = new SchematicRenderer(schematicManager);
         this.hudOverlay = new HUDOverlay(schematicManager);
 
-        // EventBus 7 via addListener (compatibility shim)
-        MinecraftForge.EVENT_BUS.addListener(this::onKeyInput);
+        // EventBus 7: use each event's BUS field
+        InputEvent.Key.BUS.addListener(this::onKeyInput);
     }
 
     public static BetterSchematics getInstance() { return instance; }
