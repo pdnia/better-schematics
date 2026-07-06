@@ -61,6 +61,6 @@ public class BetterSchematics {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null) return;
         Camera camera = mc.gameRenderer.getMainCamera();
-        renderer.render(camera, event.getTimer());
+        renderer.render(camera, event.timer());
     }
 }
