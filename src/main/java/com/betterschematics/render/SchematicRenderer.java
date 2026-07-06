@@ -9,6 +9,7 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.core.BlockPos;
@@ -22,7 +23,9 @@ public class SchematicRenderer {
 
     private static final RenderType LINES_TYPE = RenderType.create(
         "betterschematics:lines",
-        (RenderSetup) builder -> {}
+        RenderSetup.builder(RenderPipelines.LINES)
+            .expectedBufferSize(RenderType.SMALL_BUFFER_SIZE)
+            .build()
     );
 
     public SchematicRenderer(SchematicManager manager) { this.manager = manager; }
