@@ -23,7 +23,7 @@ public class SchematicRenderer {
 
     private static final RenderType LINES_TYPE = RenderType.create(
         "betterschematics:lines",
-        RenderSetup.builder(RenderPipelines.LINES).create()
+        RenderSetup.builder(RenderPipelines.LINES).apply()
     );
 
     public SchematicRenderer(SchematicManager manager) { this.manager = manager; }
