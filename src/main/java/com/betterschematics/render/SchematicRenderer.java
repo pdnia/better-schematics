@@ -10,6 +10,7 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -18,6 +19,15 @@ import org.joml.Matrix4f;
 public class SchematicRenderer {
     private final SchematicManager manager;
     private boolean renderEnabled = true;
+
+    private static final RenderType LINES_TYPE = RenderType.create(
+        "betterschematics:lines",
+        RenderType.SMALL_BUFFER_SIZE,
+        false,
+        true,
+        RenderPipelines.LINES,
+        RenderType.CompositeState.builder().createCompositeState(RenderType.OutlineProperty.NONE)
+    );
 
     public SchematicRenderer(SchematicManager manager) { this.manager = manager; }
     public void toggleRender() { renderEnabled = !renderEnabled; }
@@ -51,11 +61,11 @@ public class SchematicRenderer {
         int maxY = Math.max(origin.getY(), endPos.getY()) + 1;
         int maxZ = Math.max(origin.getZ(), endPos.getZ()) + 1;
 
-        VertexConsumer outlineVc = buffers.getBuffer(RenderPipelines.LINES);
+        VertexConsumer outlineVc = buffers.getBuffer(LINES_TYPE);
         addWireframeBox(outlineVc, mat, minX, minY, minZ, maxX, maxY, maxZ, 1f, 1f, 0.867f, 0.5f);
-        buffers.endBatch(RenderPipelines.LINES);
+        buffers.endBatch(LINES_TYPE);
 
-        VertexConsumer vc = buffers.getBuffer(RenderPipelines.LINES);
+        VertexConsumer vc = buffers.getBuffer(LINES_TYPE);
         for (int y = 0; y < size.getY(); y++) {
             for (int z = 0; z < size.getZ(); z++) {
                 for (int x = 0; x < size.getX(); x++) {
@@ -72,7 +82,7 @@ public class SchematicRenderer {
                 }
             }
         }
-        buffers.endBatch(RenderPipelines.LINES);
+        buffers.endBatch(LINES_TYPE);
     }
 
     private void addWireframeBox(VertexConsumer vc, Matrix4f mat,
