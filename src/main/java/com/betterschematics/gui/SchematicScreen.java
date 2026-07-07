@@ -31,9 +31,8 @@ public class SchematicScreen extends Screen {
         super.init();
         scanSchematicFiles();
 
-        int centerX = this.width / 2;
-        // File list on the left
-        int filesX = centerX - 200;
+        int cx = this.width / 2;
+        int filesX = cx - 200;
         int filesY = 25;
         
         if (!schematicFiles.isEmpty()) {
@@ -51,14 +50,12 @@ public class SchematicScreen extends Screen {
             }
         }
 
-        // Controls - compact grid on the right
         int btnW = 90;
         int btnH = 20;
         int gap = 24;
-        int ctrlX = centerX + 100;
+        int ctrlX = cx + 100;
         int ctrlY = 25;
         
-        // Row 1: Rotate
         this.addRenderableWidget(
             Button.builder(Component.literal("Rotate CW"), btn -> manager.rotatePlacement(true))
                 .bounds(ctrlX, ctrlY, btnW, btnH).build());
@@ -66,16 +63,14 @@ public class SchematicScreen extends Screen {
             Button.builder(Component.literal("Rotate CCW"), btn -> manager.rotatePlacement(false))
                 .bounds(ctrlX + btnW + 5, ctrlY, btnW, btnH).build());
         
-        // Row 2: Mirror
         ctrlY += gap;
         this.addRenderableWidget(
             Button.builder(Component.literal("Mirror X"), btn -> manager.toggleMirror('x'))
                 .bounds(ctrlX, ctrlY, btnW, btnH).build());
         this.addRenderableWidget(
-            Button.builder(Component.literal("Mirror Z"), btn -> manager.toggleMirror('z'))
+            Button.builder(Component.literal("Mirror Z"), btn -> manager.toggleMirror('r'))
                 .bounds(ctrlX + btnW + 5, ctrlY, btnW, btnH).build());
         
-        // Row 3: Layer
         ctrlY += gap;
         this.addRenderableWidget(
             Button.builder(Component.literal("Layer +"), btn -> manager.shiftLayerUp())
@@ -84,7 +79,6 @@ public class SchematicScreen extends Screen {
             Button.builder(Component.literal("Layer -"), btn -> manager.shiftLayerDown())
                 .bounds(ctrlX + btnW + 5, ctrlY, btnW, btnH).build());
         
-        // Row 4: Materials + Toggle Render
         ctrlY += gap;
         this.addRenderableWidget(
             Button.builder(Component.literal("Materials"), btn -> {
@@ -102,12 +96,10 @@ public class SchematicScreen extends Screen {
                 BetterSchematics.getInstance().getRenderer().toggleRender();
             }).bounds(ctrlX + btnW + 5, ctrlY, btnW, btnH).build());
         
-        // Row 5: Layer Mode + Resume
         ctrlY += gap;
         this.addRenderableWidget(
-            Button.builder(Component.literal("Layer Mode"), btn -> {
-                manager.setLayerMode(!manager.isLayerMode());
-            }).bounds(ctrlX, ctrlY, btnW, btnH).build());
+            Button.builder(Component.literal("Layer Mode"), btn -> manager.setLayerMode(!manager.isLayerMode()))
+                .bounds(ctrlX, ctrlY, btnW, btnH).build());
         this.addRenderableWidget(
             Button.builder(Component.literal("Resume Game"), btn -> this.onClose())
                 .bounds(ctrlX + btnW + 5, ctrlY, btnW, btnH).build());
@@ -125,19 +117,19 @@ public class SchematicScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics g, int mx, int my, float pt) {
-        super.render(g, mx, my, pt);
+    public void render(GuiGraphics g, int mx, int my, float partialTick) {
+        super.render(g, mx, my, partialTick);
         g.drawCenteredString(this.font, Component.literal("Better Schematics v0.3"), this.width / 2, 8, 0xFFFFFFFF);
 
         if (schematicFiles.isEmpty()) {
-            g.drawCenteredString(this.font, Component.literal("Brak .litematic plików! Wruŗ (schematics/) w .betterschematics/"), this.width / 2, this.height / 2, 0xFFFFFFFF);
+            g.drawCenteredString(this.font, Component.literal("No .litematic files in schematics/"), this.width / 2, this.height / 2, 0xFFFFFFFF);
         }
 
         if (manager.hasSchematic()) {
             SchematicData d = manager.getActiveSchematic();
-            ProgressTracker pt = manager.getProgressTracker();
+            ProgressTracker tracker = manager.getProgressTracker();
             g.drawString(this.font, "Loaded: " + d.name, 5, this.height - 35, 0xFFFFFFFF);
-            g.drawString(this.font, "Progress: " + String.format("%.1f%%", pt.getPercentComplete()), 5, this.height - 20, 0xFFFFFFFF);
+            g.drawString(this.font, "Progress: " + String.format("%.1f%%", tracker.getPercentComplete()), 5, this.height - 20, 0xFFFFFFFF);
         }
     }
 
