@@ -28,7 +28,6 @@ public class SchematicScreen extends Screen {
 
     @Override
     protected void init() {
-        LOGGER.info("[BetterSchematics] init() called!");
         super.init();
         int cx = this.width / 2;
         int cy = this.height / 2;
@@ -45,7 +44,6 @@ public class SchematicScreen extends Screen {
                     displayName = displayName.substring(0, 22) + "..";
                 }
                 this.addRenderableWidget(Button.builder(Component.literal(displayName), btn -> {
-                    LOGGER.info("[BetterSchematics] Loading: {}", file.getAbsolutePath());
                     manager.loadSchematic(file);
                 }).bounds(cx - 120, yStart + i * 22, 240, 20).build());
             }
@@ -70,19 +68,25 @@ public class SchematicScreen extends Screen {
         this.addRenderableWidget(Button.builder(Component.literal("Materials"), btn -> {
             String m = manager.exportMaterialList();
             LOGGER.info("[BetterSchematics] Materials:\n{}", m);
+            // Show in chat too
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player != null) {
+                for (String line : m.split("\\n")) {
+                    if (!line.isBlank()) {
+                        mc.player.displayClientMessage(Component.literal(line), false);
+                    }
+                }
+            }
         }).bounds(cx - 40, controlY + 130, 80, 20).build());
         this.addRenderableWidget(Button.builder(Component.literal("Resume Game"), btn -> {
             this.onClose();
         }).bounds(cx - 40, controlY + 170, 80, 20).build());
-
-        LOGGER.info("[BetterSchematics] init() done, {} children", children().size());
     }
 
     private void scanSchematicFiles() {
         schematicFiles.clear();
         Minecraft mc = Minecraft.getInstance();
         File schematicsDir = new File(mc.gameDirectory, "schematics");
-        LOGGER.info("[BetterSchematics] Scanning: {}", schematicsDir.getAbsolutePath());
         if (!schematicsDir.exists()) {
             schematicsDir.mkdirs();
         }
@@ -92,12 +96,10 @@ public class SchematicScreen extends Screen {
                 for (File f : files) {
                     if (f.isFile()) {
                         schematicFiles.add(f);
-                        LOGGER.info("[BetterSchematics] Found: {}", f.getName());
                     }
                 }
             }
         }
-        LOGGER.info("[BetterSchematics] Total .litematic: {}", schematicFiles.size());
     }
 
     @Override
