@@ -6,11 +6,11 @@ import com.betterschematics.render.HUDOverlay;
 import com.betterschematics.render.SchematicRenderer;
 import com.betterschematics.schematic.SchematicManager;
 import com.mojang.logging.LogUtils;
-import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
-import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import org.slf4j.Logger;
 
@@ -30,12 +30,11 @@ public class BetterSchematics {
         this.renderer = new SchematicRenderer(schematicManager);
         this.hudOverlay = new HUDOverlay(schematicManager);
 
-        // Register key mappings - RegisterKeyMappingsEvent uses the same BUS pattern
+        // Register key mappings
         RegisterKeyMappingsEvent.BUS.addListener(BetterSchematicsConfig::registerKeys);
 
-        // Register forge event listeners
         InputEvent.Key.BUS.addListener(this::onKeyInput);
-        TickEvent.RenderTickEvent.Post.BUS.addListener(this::onRenderTick);
+        MinecraftForge.EVENT_BUS.addListener(this::onRenderLevelStage);
     }
 
     public static BetterSchematics getInstance() { return instance; }
@@ -62,10 +61,10 @@ public class BetterSchematics {
         }
     }
 
-    private void onRenderTick(TickEvent.RenderTickEvent.Post event) {
+    private void onRenderLevelStage(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null) return;
-        Camera camera = mc.gameRenderer.getMainCamera();
-        renderer.render(camera, event.timer());
+        renderer.render(event.getPoseStack(), event.getCamera());
     }
 }
