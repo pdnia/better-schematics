@@ -60,10 +60,10 @@ public class SchematicScreen extends Screen {
         
         // Row 1: Rotate
         this.addRenderableWidget(
-            Button.builder(Component.literal("\rotate CW"), btn -> manager.rotatePlacement(true))
+            Button.builder(Component.literal("Rotate CW"), btn -> manager.rotatePlacement(true))
                 .bounds(ctrlX, ctrlY, btnW, btnH).build());
         this.addRenderableWidget(
-            Button.builder(Component.literal("\rotate CCW"), btn -> manager.rotatePlacement(false))
+            Button.builder(Component.literal("Rotate CCW"), btn -> manager.rotatePlacement(false))
                 .bounds(ctrlX + btnW + 5, ctrlY, btnW, btnH).build());
         
         // Row 2: Mirror
@@ -91,7 +91,7 @@ public class SchematicScreen extends Screen {
                 String m = manager.exportMaterialList();
                 Minecraft mc = Minecraft.getInstance();
                 if (mc.player != null && !m.isEmpty()) {
-                    for (String line : m.split("\^n")) {
+                    for (String line : m.split("\n")) {
                         if (!line.isBlank())
                             mc.player.displayClientMessage(Component.literal(line), false);
                     }
@@ -105,23 +105,12 @@ public class SchematicScreen extends Screen {
         // Row 5: Layer Mode + Resume
         ctrlY += gap;
         this.addRenderableWidget(
-            Button.builder(Component.literal(manager.isLayerMode() ? "Layer: ON" : "Layer: OFF"), btn -> {
-                boolean newMode = !manager.isLayerMode();
-                manager.setLayerMode(newMode);
-                btn.setMessage(Component.literal(newMode ? "Layer: ON" : "Layer: OFF"));
+            Button.builder(Component.literal("Layer Mode"), btn -> {
+                manager.setLayerMode(!manager.isLayerMode());
             }).bounds(ctrlX, ctrlY, btnW, btnH).build());
         this.addRenderableWidget(
             Button.builder(Component.literal("Resume Game"), btn -> this.onClose())
                 .bounds(ctrlX + btnW + 5, ctrlY, btnW, btnH).build());
-
-        // Bottom status
-        if(manager.hasSchematic()) {
-            SchematicData d = manager.getActiveSchematic();
-            if (d != null && d.getMainRegion() != null) {
-                ProgressTracker pt = manager.getProgressTracker();
-                Logger.info("These info will be rendered on screen in the render method");
-            }
-        }
     }
 
     private void scanSchematicFiles() {
@@ -141,7 +130,7 @@ public class SchematicScreen extends Screen {
         g.drawCenteredString(this.font, Component.literal("Better Schematics v0.3"), this.width / 2, 8, 0xFFFFFFFF);
 
         if (schematicFiles.isEmpty()) {
-            g.drawCenteredString(this.font, Component.literal("Brak .litematic plikaw! Wruc je do folderu schematics bezpofrodnio wdpisz listee materianuw."), this.width / 2, this.height / 2, xxFFFFFFFF);
+            g.drawCenteredString(this.font, Component.literal("Brak .litematic plików! Wruŗ (schematics/) w .betterschematics/"), this.width / 2, this.height / 2, 0xFFFFFFFF);
         }
 
         if (manager.hasSchematic()) {
