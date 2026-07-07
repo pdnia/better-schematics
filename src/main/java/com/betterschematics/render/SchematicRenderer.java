@@ -9,13 +9,12 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.DepthTest;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -25,18 +24,16 @@ public class SchematicRenderer {
     private final SchematicManager manager;
     private boolean renderEnabled = true;
 
-    /** Render type without depth testing - lines visible through walls like Litematica */
     private static final RenderType GHOST_LINES = RenderType.create(
         "betterschematics:ghost_lines",
-        RenderSetup.builder(RenderPipelines.LINES)
-            .depthTest(DepthTest.NO_DEPTH_TEST)
-            .createRenderSetup()
+        RenderSetup.builder(RenderPipelines.LINES).createRenderSetup()
     );
 
     public SchematicRenderer(SchematicManager manager) { this.manager = manager; }
     public void toggleRender() { renderEnabled = !renderEnabled; }
     public boolean isRenderEnabled() { return renderEnabled; }
 
+    /** Both Pre and Post use the same build logic */
     public void render(Camera camera) {
         if (!renderEnabled) return;
         SchematicData data = manager.getActiveSchematic();
@@ -44,28 +41,40 @@ public class SchematicRenderer {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
 
+        SchematicRegion region = data.getMainRegion();
+        if (region == null) return;
+
         Vec3 camPos = camera.position();
         PoseStack pose = new PoseStack();
         pose.mulPose(camera.rotation());
         pose.translate(-camPos.x, -camPos.y, -camPos.z);
         Matrix4f mat = pose.last().pose();
 
-        SchematicRegion region = data.getMainRegion();
-        if (region == null) return;
         BlockPos size = region.size;
-
         BlockPos origin = manager.getPlacementOrigin();
-        BlockPos endPos = manager.transformPos(new BlockPos(size.getX()-1, size.getY()-1, size.getZ()-1));
-        int minX = Math.min(origin.getX(), endPos.getX());
-        int minY = Math.min(origin.getY(), endPos.getY());
-        int minZ = Math.min(origin.getZ(), endPos.getZ());
-        int maxX = Math.max(origin.getX(), endPos.getX())+1;
-        int maxY = Math.max(origin.getY(), endPos.getY())+1;
-        int maxZ = Math.max(origin.getZ(), endPos.getZ())+1;
+        BlockPos end = manager.transformPos(new BlockPos(size.getX()-1, size.getY()-1, size.getZ()-1));
+        int minX = Math.min(origin.getX(), end.getX());
+        int minY = Math.min(origin.getY(), end.getY());
+        int minZ = Math.min(origin.getZ(), end.getZ());
+        int maxX = Math.max(origin.getX(), end.getX())+1;
+        int maxY = Math.max(origin.getY(), end.getY())+1;
+        int maxZ = Math.max(origin.getZ(), end.getZ())+1;
 
-        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
-        VertexConsumer vc = buffers.getBuffer(GHOST_LINES);
+        // Build all wireframes using Tesselator directly
+        Tesselator t = Tesselator.getInstance();
+        BufferBuilder bb = t.begin(VertexFormat.Mode.LINES, GHOST_LINES.format());
+        buildAllWireframes(bb, mat, minX, minY, minZ, maxX, maxY, maxZ, size, region, mc);
+        MeshData mesh = bb.buildOrThrow();
 
+        // Draw without depth test - always visible through walls
+        RenderSystem.disableDepthTest();
+        GHOST_LINES.draw(mesh);
+        RenderSystem.enableDepthTest();
+    }
+
+    private void buildAllWireframes(VertexConsumer vc, Matrix4f mat,
+                                     int minX, int minY, int minZ, int maxX, int maxY, int maxZ,
+                                     BlockPos size, SchematicRegion region, Minecraft mc) {
         // Outline box - orange
         addWireframeBox(vc, mat, minX, minY, minZ, maxX, maxY, maxZ, 1f, 0.8f, 0.2f, 0.8f);
 
@@ -76,11 +85,11 @@ public class SchematicRenderer {
                     BlockPos local = new BlockPos(x, y, z);
                     BlockState expected = region.getBlockState(local);
                     if (expected == null || expected.isAir()) continue;
-                    BlockPos worldPos = manager.transformPos(local);
-                    BlockState actual = mc.level.getBlockState(worldPos);
+                    BlockPos wp = manager.transformPos(local);
+                    BlockState actual = mc.level.getBlockState(wp);
                     boolean match = expected.equals(actual);
-                    addWireframeBox(vc, mat, worldPos.getX(), worldPos.getY(), worldPos.getZ(),
-                            worldPos.getX()+1, worldPos.getY()+1, worldPos.getZ()+1,
+                    addWireframeBox(vc, mat, wp.getX(), wp.getY(), wp.getZ(),
+                            wp.getX()+1, wp.getY()+1, wp.getZ()+1,
                             0f, match?0.8f:0f, match?0f:0.8f, 0.5f);
                 }
     }
