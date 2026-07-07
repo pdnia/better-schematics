@@ -31,7 +31,7 @@ public class BetterSchematics {
 
         RegisterKeyMappingsEvent.BUS.addListener(BetterSchematicsConfig::registerKeys);
         InputEvent.Key.BUS.addListener(this::onKeyInput);
-        TickEvent.RenderTickEvent.Pre.BUS.addListener(this::onRenderTick);
+        TickEvent.RenderTickEvent.Post.BUS.addListener(this::onRenderTick);
     }
 
     public static BetterSchematics getInstance() { return instance; }
@@ -58,7 +58,7 @@ public class BetterSchematics {
         }
     }
 
-    private void onRenderTick(TickEvent.RenderTickEvent.Pre event) {
+    private void onRenderTick(TickEvent.RenderTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null) return;
         renderer.render(mc.gameRenderer.getMainCamera());
