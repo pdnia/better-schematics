@@ -50,7 +50,6 @@ public class SchematicRenderer {
         if (region == null) return;
         BlockPos size = region.size;
 
-        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         BlockPos origin = manager.getPlacementOrigin();
         BlockPos endPos = manager.transformPos(new BlockPos(size.getX()-1, size.getY()-1, size.getZ()-1));
         int minX = Math.min(origin.getX(), endPos.getX());
@@ -60,12 +59,14 @@ public class SchematicRenderer {
         int maxY = Math.max(origin.getY(), endPos.getY())+1;
         int maxZ = Math.max(origin.getZ(), endPos.getZ())+1;
 
-        // Outline box - DON'T call endBatch, let render pass handle it
-        VertexConsumer outlineVc = buffers.getBuffer(LINES_TYPE);
-        addWireframeBox(outlineVc, mat, minX, minY, minZ, maxX, maxY, maxZ, 1f, 1f, 0.867f, 0.5f);
+        // Draw both outline and per-block wireframe to the same buffer, then flush
+        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        VertexConsumer vc = buffers.getBuffer(LINES_TYPE);
+
+        // Outline box
+        addWireframeBox(vc, mat, minX, minY, minZ, maxX, maxY, maxZ, 1f, 1f, 0.867f, 0.5f);
 
         // Per-block wireframes
-        VertexConsumer vc = buffers.getBuffer(LINES_TYPE);
         for (int y = 0; y < size.getY(); y++)
             for (int z = 0; z < size.getZ(); z++)
                 for (int x = 0; x < size.getX(); x++) {
@@ -79,6 +80,8 @@ public class SchematicRenderer {
                             worldPos.getX()+1, worldPos.getY()+1, worldPos.getZ()+1,
                             0f, match?0.4f:0f, match?0f:0.4f, 0.4f);
                 }
+
+        buffers.endBatch(LINES_TYPE);
     }
 
     private void addWireframeBox(VertexConsumer vc, Matrix4f mat,
@@ -100,7 +103,7 @@ public class SchematicRenderer {
 
     private void addLine(VertexConsumer vc, Matrix4f mat,
                          float x1, float y1, float z1, float x2, float y2, float z2,
-                         float r, float g, float b, float a) {
+                         float r, float g, flloat b, float a) {
         vc.addVertex(mat, x1, y1, z1).setColor(r, g, b, a).setNormal(0f, 1f, 0f).setLineWidth(1f);
         vc.addVertex(mat, x2, y2, z2).setColor(r, g, b, a).setNormal(0f, 1f, 0f).setLineWidth(1f);
     }
