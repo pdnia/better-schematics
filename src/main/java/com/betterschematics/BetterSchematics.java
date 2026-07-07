@@ -44,10 +44,8 @@ public class BetterSchematics {
         while (BetterSchematicsConfig.openGuiKey.consumeClick()) {
             Minecraft.getInstance().setScreen(new SchematicScreen());
         }
+        // G key toggles wireframe render (no auto-place)
         while (BetterSchematicsConfig.executePlaceKey.consumeClick()) {
-            schematicManager.placeAllBlocks();
-        }
-        while (BetterSchematicsConfig.toggleRenderKey.consumeClick()) {
             renderer.toggleRender();
         }
         while (BetterSchematicsConfig.layerUpKey.consumeClick()) {
