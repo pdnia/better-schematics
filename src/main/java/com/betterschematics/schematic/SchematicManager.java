@@ -154,7 +154,7 @@ public class SchematicManager {
                     }
         }
         StringBuilder sb = new StringBuilder();
-        map.entrySet().stream().sorted((a, b) -> b.getValue().compareToa(a.getValue()))
+        map.entrySet().stream().sorted((a, b) -> b.getValue().compareTo(a.getValue()))
             .forEach(e -> sb.append(e.getKey()).append(" x ").append(e.getValue()).append("\n"));
         return sb.toString();
     }
