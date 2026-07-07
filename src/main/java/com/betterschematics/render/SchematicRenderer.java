@@ -3,18 +3,14 @@ package com.betterschematics.render;
 import com.betterschematics.schematic.SchematicData;
 import com.betterschematics.schematic.SchematicManager;
 import com.betterschematics.schematic.SchematicRegion;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -59,13 +55,11 @@ public class SchematicRenderer {
         int maxY = Math.max(origin.getY(), end.getY())+1;
         int maxZ = Math.max(origin.getZ(), end.getZ())+1;
 
-        Tesselator t = Tesselator.getInstance();
-        BufferBuilder bb = t.begin(VertexFormat.Mode.LINES, GHOST_LINES.format());
+        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        VertexConsumer vc = buffers.getBuffer(GHOST_LINES);
 
-        // Outline box - gold
-        addWireframeBox(bb, mat, minX, minY, minZ, maxX, maxY, maxZ, 1f, 0.85f, 0f, 0.8f);
+        addWireframeBox(vc, mat, minX, minY, minZ, maxX, maxY, maxZ, 1f, 0.85f, 0f, 0.8f);
 
-        // Per-block - material colors
         for (int y = 0; y < size.getY(); y++)
             for (int z = 0; z < size.getZ(); z++)
                 for (int x = 0; x < size.getX(); x++) {
@@ -81,14 +75,9 @@ public class SchematicRenderer {
                     float g = ((color >> 8) & 0xFF) / 255f;
                     float b = (color & 0xFF) / 255f;
                     float alpha = match ? 0.30f : 0.75f;
-                    addWireframeBox(bb, mat, wp.getX(), wp.getY(), wp.getZ(),
+                    addWireframeBox(vc, mat, wp.getX(), wp.getY(), wp.getZ(),
                             wp.getX()+1, wp.getY()+1, wp.getZ()+1, r, g, b, alpha);
                 }
-
-        MeshData mesh = bb.buildOrThrow();
-        RenderSystem.disableDepthTest();
-        GHOST_LINES.draw(mesh);
-        RenderSystem.enableDepthTest();
     }
 
     private void addWireframeBox(VertexConsumer vc, Matrix4f mat,
