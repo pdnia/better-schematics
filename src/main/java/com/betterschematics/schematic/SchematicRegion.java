@@ -34,10 +34,14 @@ public class SchematicRegion {
         return c;
     }
 
+    /**
+     * Get block state from local coordinates (0--size-1).
+     * No position offset needed - caller should iterate from 0 to size-1.
+     */
     public BlockState getBlockState(BlockPos localPos) {
-        int x = localPos.getX() - position.getX();
-        int y = localPos.getY() - position.getY();
-        int z = localPos.getZ() - position.getZ();
+        int x = localPos.getX();
+        int y = localPos.getY();
+        int z = localPos.getZ();
         if (x < 0 || x >= size.getX() || y < 0 || y >= size.getY() || z < 0 || z >= size.getZ()) return null;
         int idx = x + size.getX() * (z + size.getZ() * y);
         if (idx >= blockData.length) return null;
@@ -55,7 +59,7 @@ public class SchematicRegion {
             Math.abs(sizeTag.getInt("y").orElse(0)),
             Math.abs(sizeTag.getInt("z").orElse(0))
         );
-        LOGGER.info("[BetterSchematics] Region '{}' size: {} x {} x {}", name, size.getX(), size.getY(), size.getZ());
+        LOGGER.info("[BetterSchematics] Region '{}' size: {} x {} x {}, pos: {} x {} x {}", name, size.getX(), size.getY(), size.getZ(), position.getX(), position.getY(), position.getZ());
 
         ListTag palTag = tag.getList("BlockStatePalette").orElse(new ListTag());
         int paletteSize = palTag.size();
@@ -68,15 +72,13 @@ public class SchematicRegion {
         long[] bd = new long[(int) Math.min(totalBlocks, Integer.MAX_VALUE)];
 
         int bits = Math.max(2, 64 - Integer.numberOfLeadingZeros(Math.max(1, paletteSize - 1)));
-        LOGGER.info("[BetterSchematics] Bits per block: {}", bits);
-
         long[] packed = tag.getLongArray("BlockStates").orElse(new long[0]);
-        LOGGER.info("[BetterSchematics] Packed BlockStates length: {}", packed.length);
         
         if (packed.length == 0) {
             LOGGER.warn("[BetterSchematics] No BlockStates in region '{}', creating empty data", name);
         } else {
             int blocksPerLong = 64 / bits;
+            LOGGER.info("[BetterSchematics] Blocks per long: {}", blocksPerLong);
             for (int i = 0; i < bd.length; i++) {
                 int longIdx = i / blocksPerLong;
                 int bitOffset = (i % blocksPerLong) * bits;
