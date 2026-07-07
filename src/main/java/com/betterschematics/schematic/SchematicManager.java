@@ -45,13 +45,15 @@ public class SchematicManager {
         try {
             schematic = SchematicData.load(file);
             Minecraft mc = Minecraft.getInstance();
-            placementOrigin = new BlockPos((int)mc.player.getX(), (int)mc.player.getY(), (int)mc.player.getZ());
+            placementOrigin = new BlockPos((int)mc.player.getX(), (int)mc.player.getY()+1, (int)mc.player.getZ());
             progressTracker.setSchematic(schematic);
-            BetterSchematics.LOGGER.info("Loaded schematic, placed at {}", placementOrigin);
+            SchematicRegion r = schematic.getMainRegion();
+            int blocks = r != null ? (int) r.getNonAirBlocks() : 0;
+            BetterSchematics.LOGGER.info("Loaded schematic {} ({} blocks) at {}", r != null ? r.name : "?", blocks, placementOrigin);
             if (mc.player != null) {
                 mc.player.displayClientMessage(
-                    Component.literal("ķSchemat wczytany! Klawisze G aby umiesczać bloki."), false);
-                }
+                    Component.literal("\u017Bechtem\u004Dat wczytany! Klawisze G aby umieSci\u0105ch\u0147 wszystkie bloki."), false);
+            }
             return true;
         } catch (IOException e) {
             BetterSchematics.LOGGER.error("Failed to load schematic", e);
@@ -83,41 +85,50 @@ public class SchematicManager {
         currentLayerMax = Math.max(currentLayerMax - 1, 0);
     }
 
-    public void placeNextBlock() {
+    public void placeAllBlocks() {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null || schematic == null) {
-            BetterSchematics.LOGGER.warn("Placement skipped: world, player or schematic null");
-            return;
-        }
-        if (!mc.player.getAbilities().instabuild) {
-            mc.player.displayClientMessage(
-                Component.literal("ėUmiesczanie działa tylko w trybie Kreatywnym!"), false);
+            BetterSchematics.LOGGER.warn("Placement skipped");
             return;
         }
         SchematicRegion r = schematic.getMainRegion();
         if (r == null) return;
         BlockPos s = r.size;
+        boolean isCreative = mc.player.getAbilities().instabuild;
+        int placed = 0;
+        int skipped = 0;
+        
         for (int y = currentLayerMin; y <= currentLayerMax; y++) {
             for (int x = 0; x < s.getX(); x++) {
                 for (int z = 0; z < s.getZ(); z++) {
                     BlockState expected = r.getBlockState(new BlockPos(x, y, z));
-                    if (expected != null && !expected.isAir()) {
-                        BlockPos wp = transformPos(new BlockPos(x, y, z));
-                        if (!expected.equals(mc.level.getBlockState(wp))) {
-                            nextBlockTarget = wp;
+                    if (expected == null || expected.isAir()) continue;
+                    BlockPos wp = transformPos(new BlockPos(x, y, z));
+                    BlockState actual = mc.level.getBlockState(wp);
+                    if (!expected.equals(actual)) {
+                        if (isCreative) {
                             mc.level.setBlock(wp, expected, 3);
-                            BetterSchematics.LOGGER.info("Placed block at {}", wp);
-                            return;
+                            placed++;
+                        } else {
+                            skipped++;
                         }
                     }
                 }
             }
         }
-        nextBlockTarget = null;
-        BetterSchematics.LOGGER.info("No more blocks to place in current layers");
-        if (mc.player != null) {
+
+        if (skipped > 0 && placed == 0) {
             mc.player.displayClientMessage(
-                Component.literal("´Wszystkie bloki u mieszczone!"), false);
+                Component.literal("\u017BAby umieScic\u0105h\u0147 wszystkie bloki, u\u017Cyj trybu Kreatywny! Pomini\u0119to " + skipped + " blok\u00F3w."), false);
+            return;
+        }
+        
+        if (placed > 0) {
+            mc.player.displayClientMessage(
+                Component.literal("\u017BUmieszczono " + placed + " blok\u00F3w!"), false);
+        } else {
+            mc.player.displayClientMessage(
+                Component.literal("\u017BWszystkie bloki u\u017C leH\u017E od pophrzedniego za\u0143adowania schematu!"), false);
         }
     }
 
