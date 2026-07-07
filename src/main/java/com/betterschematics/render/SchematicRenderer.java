@@ -3,12 +3,17 @@ package com.betterschematics.render;
 import com.betterschematics.schematic.SchematicData;
 import com.betterschematics.schematic.SchematicManager;
 import com.betterschematics.schematic.SchematicRegion;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.DepthTest;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.core.BlockPos;
@@ -20,9 +25,12 @@ public class SchematicRenderer {
     private final SchematicManager manager;
     private boolean renderEnabled = true;
 
-    private static final RenderType LINES_TYPE = RenderType.create(
-        "betterschematics:lines",
-        RenderSetup.builder(RenderPipelines.LINES).createRenderSetup()
+    /** Render type without depth testing - lines visible through walls like Litematica */
+    private static final RenderType GHOST_LINES = RenderType.create(
+        "betterschematics:ghost_lines",
+        RenderSetup.builder(RenderPipelines.LINES)
+            .depthTest(DepthTest.NO_DEPTH_TEST)
+            .createRenderSetup()
     );
 
     public SchematicRenderer(SchematicManager manager) { this.manager = manager; }
@@ -55,10 +63,8 @@ public class SchematicRenderer {
         int maxY = Math.max(origin.getY(), endPos.getY())+1;
         int maxZ = Math.max(origin.getZ(), endPos.getZ())+1;
 
-        // Add vertices to buffer source - DON'T endBatch!
-        // The render pass will draw them when endLastBatch() is called.
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
-        VertexConsumer vc = buffers.getBuffer(LINES_TYPE);
+        VertexConsumer vc = buffers.getBuffer(GHOST_LINES);
 
         // Outline box - orange
         addWireframeBox(vc, mat, minX, minY, minZ, maxX, maxY, maxZ, 1f, 0.8f, 0.2f, 0.8f);
