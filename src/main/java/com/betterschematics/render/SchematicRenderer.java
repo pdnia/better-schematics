@@ -3,12 +3,8 @@ package com.betterschematics.render;
 import com.betterschematics.schematic.SchematicData;
 import com.betterschematics.schematic.SchematicManager;
 import com.betterschematics.schematic.SchematicRegion;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -41,10 +37,10 @@ public class SchematicRenderer {
         if (mc.level == null) return;
 
         Vec3 camPos = camera.position();
-        PoseStack poseStack = new PoseStack();
-        poseStack.mulPose(camera.rotation());
-        poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
-        Matrix4f mat = poseStack.last().pose();
+        PoseStack pose = new PoseStack();
+        pose.mulPose(camera.rotation());
+        pose.translate(-camPos.x, -camPos.y, -camPos.z);
+        Matrix4f mat = pose.last().pose();
 
         SchematicRegion region = data.getMainRegion();
         if (region == null) return;
@@ -59,13 +55,15 @@ public class SchematicRenderer {
         int maxY = Math.max(origin.getY(), endPos.getY())+1;
         int maxZ = Math.max(origin.getZ(), endPos.getZ())+1;
 
+        // Add vertices to buffer source - DON'T endBatch!
+        // The render pass will draw them when endLastBatch() is called.
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         VertexConsumer vc = buffers.getBuffer(LINES_TYPE);
 
-        // Outline box
-        addWireframeBox(vc, mat, minX, minY, minZ, maxX, maxY, maxZ, 1f, 1f, 0.867f, 0.5f);
+        // Outline box - orange
+        addWireframeBox(vc, mat, minX, minY, minZ, maxX, maxY, maxZ, 1f, 0.8f, 0.2f, 0.8f);
 
-        // Per-block wireframes
+        // Per-block wireframes - green/red
         for (int y = 0; y < size.getY(); y++)
             for (int z = 0; z < size.getZ(); z++)
                 for (int x = 0; x < size.getX(); x++) {
@@ -77,10 +75,8 @@ public class SchematicRenderer {
                     boolean match = expected.equals(actual);
                     addWireframeBox(vc, mat, worldPos.getX(), worldPos.getY(), worldPos.getZ(),
                             worldPos.getX()+1, worldPos.getY()+1, worldPos.getZ()+1,
-                            0f, match?0.4f:0f, match?0f:0.4f, 0.4f);
+                            0f, match?0.8f:0f, match?0f:0.8f, 0.5f);
                 }
-
-        buffers.endBatch(LINES_TYPE);
     }
 
     private void addWireframeBox(VertexConsumer vc, Matrix4f mat,
