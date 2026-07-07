@@ -6,7 +6,6 @@ import com.betterschematics.schematic.SchematicRegion;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Camera;
-import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -30,21 +29,20 @@ public class SchematicRenderer {
     public void toggleRender() { renderEnabled = !renderEnabled; }
     public boolean isRenderEnabled() { return renderEnabled; }
 
-    public void render(Camera camera, DeltaTracker timer) {
+    public void render(PoseStack poseStack, Camera camera) {
         if (!renderEnabled) return;
         SchematicData data = manager.getActiveSchematic();
         if (data == null) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
 
+        poseStack.pushPose();
         Vec3 camPos = camera.position();
-        PoseStack poseStack = new PoseStack();
-        poseStack.mulPose(camera.rotation());
         poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
         Matrix4f mat = poseStack.last().pose();
 
         SchematicRegion region = data.getMainRegion();
-        if (region == null) return;
+        if (region == null) { poseStack.popPose(); return; }
         BlockPos size = region.size;
 
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
@@ -57,12 +55,10 @@ public class SchematicRenderer {
         int maxY = Math.max(origin.getY(), endPos.getY())+1;
         int maxZ = Math.max(origin.getZ(), endPos.getZ())+1;
 
-        // Outline box (world coords, matrix handles camera transform)
         VertexConsumer outlineVc = buffers.getBuffer(LINES_TYPE);
         addWireframeBox(outlineVc, mat, minX, minY, minZ, maxX, maxY, maxZ, 1f, 1f, 0.867f, 0.5f);
         buffers.endBatch(LINES_TYPE);
 
-        // Per-block wireframes
         VertexConsumer vc = buffers.getBuffer(LINES_TYPE);
         for (int y = 0; y < size.getY(); y++)
             for (int z = 0; z < size.getZ(); z++)
@@ -78,6 +74,7 @@ public class SchematicRenderer {
                             0f, match?0.4f:0f, match?0f:0.4f, 0.4f);
                 }
         buffers.endBatch(LINES_TYPE);
+        poseStack.popPose();
     }
 
     private void addWireframeBox(VertexConsumer vc, Matrix4f mat,
