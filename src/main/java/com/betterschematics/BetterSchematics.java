@@ -9,8 +9,7 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.slf4j.Logger;
 
@@ -30,11 +29,9 @@ public class BetterSchematics {
         this.renderer = new SchematicRenderer(schematicManager);
         this.hudOverlay = new HUDOverlay(schematicManager);
 
-        // Register key mappings
         RegisterKeyMappingsEvent.BUS.addListener(BetterSchematicsConfig::registerKeys);
-
         InputEvent.Key.BUS.addListener(this::onKeyInput);
-        MinecraftForge.EVENT_BUS.addListener(this::onRenderLevelStage);
+        TickEvent.RenderTickEvent.Post.BUS.addListener(this::onRenderTick);
     }
 
     public static BetterSchematics getInstance() { return instance; }
@@ -61,10 +58,9 @@ public class BetterSchematics {
         }
     }
 
-    private void onRenderLevelStage(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
+    private void onRenderTick(TickEvent.RenderTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null) return;
-        renderer.render(event.getPoseStack(), event.getCamera());
+        renderer.render(mc.gameRenderer.getMainCamera());
     }
 }
