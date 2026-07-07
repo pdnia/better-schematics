@@ -3,7 +3,6 @@ package com.betterschematics.render;
 import com.betterschematics.schematic.SchematicData;
 import com.betterschematics.schematic.SchematicManager;
 import com.betterschematics.schematic.SchematicRegion;
-import com.mojang.blaze3d.vertex.Matrix4f;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
@@ -15,6 +14,7 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix4f;
 
 public class SchematicRenderer {
     private final SchematicManager manager;
@@ -56,8 +56,8 @@ public class SchematicRenderer {
         // Outline box
         VertexConsumer outlineVc = buffers.getBuffer(LINES_TYPE);
         addWireframeBox(outlineVc, mat,
-            minX - camPos.x, minY - camPos.y, minZ - camPos.z,
-            maxX - camPos.x, maxY - camPos.y, maxZ - camPos.z,
+            (float)(minX - camPos.x), (float)(minY - camPos.y), (float)(minZ - camPos.z),
+            (float)(maxX - camPos.x), (float)(maxY - camPos.y), (float)(maxZ - camPos.z),
             1f, 1f, 0.867f, 0.5f);
         buffers.endBatch(LINES_TYPE);
 
@@ -72,9 +72,9 @@ public class SchematicRenderer {
                     BlockPos worldPos = manager.transformPos(local);
                     BlockState actual = mc.level.getBlockState(worldPos);
                     boolean match = expected.equals(actual);
-                    float wx1 = worldPos.getX() - camPos.x;
-                    float wy1 = worldPos.getY() - camPos.y;
-                    float wz1 = worldPos.getZ() - camPos.z;
+                    float wx1 = (float)(worldPos.getX() - camPos.x);
+                    float wy1 = (float)(worldPos.getY() - camPos.y);
+                    float wz1 = (float)(worldPos.getZ() - camPos.z);
                     addWireframeBox(vc, mat, wx1, wy1, wz1, wx1+1, wy1+1, wz1+1,
                             0f, match?0.4f:0f, match?0f:0.4f, 0.4f);
                 }
