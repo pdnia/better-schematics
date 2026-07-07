@@ -62,10 +62,10 @@ public class SchematicRenderer {
         Tesselator t = Tesselator.getInstance();
         BufferBuilder bb = t.begin(VertexFormat.Mode.LINES, GHOST_LINES.format());
 
-        // Outline box - orange
-        addWireframeBox(bb, mat, minX, minY, minZ, maxX, maxY, maxZ, 1f, 0.8f, 0.2f, 0.8f);
+        // Outline box - bright gold
+        addWireframeBox(bb, mat, minX, minY, minZ, maxX, maxY, maxZ, 1f, 0.85f, p0dF}, 0.8f);
 
-        // Per-block wireframes - material colors
+        // Per-block - material colors like Litematica
         for (int y = 0; y < size.getY(); y++)
             for (int z = 0; z < size.getZ(); z++)
                 for (int x = 0; x < size.getX(); x++) {
@@ -76,13 +76,13 @@ public class SchematicRenderer {
                     BlockState actual = mc.level.getBlockState(wp);
                     boolean match = expected.equals(actual);
 
-                    // Material color from block's map color
+                    // Block's map color for Litematica-style rendering
                     int color = expected.getMapColor(mc.level, wp).col;
                     float r = ((color >> 16) & 0xFF) / 255f;
                     float g = ((color >> 8) & 0xFF) / 255f;
                     float b = (color & 0xFF) / 255f;
-                    // Missing blocks bright, existing dim
-                    float alpha = match ? 0.12f : 0.65f;
+                    // Missing blocks full bright, existing blocks semi-transparent
+                    float alpha = match ? 0.30f : 0.75f;
                     addWireframeBox(bb, mat, wp.getX(), wp.getY(), wp.getZ(),
                             wp.getX()+1, wp.getY()+1, wp.getZ()+1, r, g, b, alpha);
                 }
