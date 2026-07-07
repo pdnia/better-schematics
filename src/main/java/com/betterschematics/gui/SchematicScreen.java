@@ -19,7 +19,7 @@ public class SchematicScreen extends Screen {
     private static final Logger LOGGER = LogUtils.getLogger();
     private final SchematicManager manager;
     private final List<File> schematicFiles = new ArrayList<>();
-    private static final int MAX_FILES_SHOWN = 8;
+    private static final int MAX_FILES_SHOWN = 10;
 
     public SchematicScreen() {
         super(Component.literal("Better Schematics"));
@@ -29,91 +29,119 @@ public class SchematicScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        int cx = this.width / 2;
-        int cy = this.height / 2;
-
         scanSchematicFiles();
 
-        int yStart = cy - 60;
+        int centerX = this.width / 2;
+        // File list on the left
+        int filesX = centerX - 200;
+        int filesY = 25;
+        
         if (!schematicFiles.isEmpty()) {
             int maxShow = Math.min(schematicFiles.size(), MAX_FILES_SHOWN);
             for (int i = 0; i < maxShow; i++) {
                 final File file = schematicFiles.get(i);
-                String displayName = file.getName();
-                if (displayName.length() > 24) {
-                    displayName = displayName.substring(0, 22) + "..";
-                }
-                this.addRenderableWidget(Button.builder(Component.literal(displayName), btn -> {
-                    manager.loadSchematic(file);
-                }).bounds(cx - 120, yStart + i * 22, 240, 20).build());
+                String name = file.getName();
+                if (name.length() > 30) name = name.substring(0, 28) + "..";
+                this.addRenderableWidget(
+                    Button.builder(Component.literal(name), btn -> {
+                        manager.loadSchematic(file);
+                        this.onClose();
+                    }).bounds(filesX, filesY + i * 22, 380, 20).build()
+                );
             }
         }
 
-        int controlY = cy + 20;
-        this.addRenderableWidget(Button.builder(Component.literal("Rotate CW"), btn -> {
-            manager.rotatePlacement(true);
-        }).bounds(cx - 80, controlY + 40, 75, 20).build());
-        this.addRenderableWidget(Button.builder(Component.literal("Rotate CCW"), btn -> {
-            manager.rotatePlacement(false);
-        }).bounds(cx + 5, controlY + 40, 75, 20).build());
-        this.addRenderableWidget(Button.builder(Component.literal("Mirror X"), btn -> {
-            manager.toggleMirror('x');
-        }).bounds(cx - 80, controlY + 70, 75, 20).build());
-        this.addRenderableWidget(Button.builder(Component.literal("Mirror Z"), btn -> {
-            manager.toggleMirror('z');
-        }).bounds(cx + 5, controlY + 70, 75, 20).build());
-        this.addRenderableWidget(Button.builder(Component.literal("Layer On/Off"), btn -> {
-            manager.setLayerMode(!manager.isLayerMode());
-        }).bounds(cx - 40, controlY + 100, 80, 20).build());
-        this.addRenderableWidget(Button.builder(Component.literal("Materials"), btn -> {
-            String m = manager.exportMaterialList();
-            LOGGER.info("[BetterSchematics] Materials:\n{}", m);
-            // Show in chat too
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.player != null) {
-                for (String line : m.split("\\n")) {
-                    if (!line.isBlank()) {
-                        mc.player.displayClientMessage(Component.literal(line), false);
+        // Controls - compact grid on the right
+        int btnW = 90;
+        int btnH = 20;
+        int gap = 24;
+        int ctrlX = centerX + 100;
+        int ctrlY = 25;
+        
+        // Row 1: Rotate
+        this.addRenderableWidget(
+            Button.builder(Component.literal("\rotate CW"), btn -> manager.rotatePlacement(true))
+                .bounds(ctrlX, ctrlY, btnW, btnH).build());
+        this.addRenderableWidget(
+            Button.builder(Component.literal("\rotate CCW"), btn -> manager.rotatePlacement(false))
+                .bounds(ctrlX + btnW + 5, ctrlY, btnW, btnH).build());
+        
+        // Row 2: Mirror
+        ctrlY += gap;
+        this.addRenderableWidget(
+            Button.builder(Component.literal("Mirror X"), btn -> manager.toggleMirror('x'))
+                .bounds(ctrlX, ctrlY, btnW, btnH).build());
+        this.addRenderableWidget(
+            Button.builder(Component.literal("Mirror Z"), btn -> manager.toggleMirror('z'))
+                .bounds(ctrlX + btnW + 5, ctrlY, btnW, btnH).build());
+        
+        // Row 3: Layer
+        ctrlY += gap;
+        this.addRenderableWidget(
+            Button.builder(Component.literal("Layer +"), btn -> manager.shiftLayerUp())
+                .bounds(ctrlX, ctrlY, btnW, btnH).build());
+        this.addRenderableWidget(
+            Button.builder(Component.literal("Layer -"), btn -> manager.shiftLayerDown())
+                .bounds(ctrlX + btnW + 5, ctrlY, btnW, btnH).build());
+        
+        // Row 4: Materials + Toggle Render
+        ctrlY += gap;
+        this.addRenderableWidget(
+            Button.builder(Component.literal("Materials"), btn -> {
+                String m = manager.exportMaterialList();
+                Minecraft mc = Minecraft.getInstance();
+                if (mc.player != null && !m.isEmpty()) {
+                    for (String line : m.split("\^n")) {
+                        if (!line.isBlank())
+                            mc.player.displayClientMessage(Component.literal(line), false);
                     }
                 }
+            }).bounds(ctrlX, ctrlY, btnW, btnH).build());
+        this.addRenderableWidget(
+            Button.builder(Component.literal("Toggle Render"), btn -> {
+                BetterSchematics.getInstance().getRenderer().toggleRender();
+            }).bounds(ctrlX + btnW + 5, ctrlY, btnW, btnH).build());
+        
+        // Row 5: Layer Mode + Resume
+        ctrlY += gap;
+        this.addRenderableWidget(
+            Button.builder(Component.literal(manager.isLayerMode() ? "Layer: ON" : "Layer: OFF"), btn -> {
+                boolean newMode = !manager.isLayerMode();
+                manager.setLayerMode(newMode);
+                btn.setMessage(Component.literal(newMode ? "Layer: ON" : "Layer: OFF"));
+            }).bounds(ctrlX, ctrlY, btnW, btnH).build());
+        this.addRenderableWidget(
+            Button.builder(Component.literal("Resume Game"), btn -> this.onClose())
+                .bounds(ctrlX + btnW + 5, ctrlY, btnW, btnH).build());
+
+        // Bottom status
+        if(manager.hasSchematic()) {
+            SchematicData d = manager.getActiveSchematic();
+            if (d != null && d.getMainRegion() != null) {
+                ProgressTracker pt = manager.getProgressTracker();
+                Logger.info("These info will be rendered on screen in the render method");
             }
-        }).bounds(cx - 40, controlY + 130, 80, 20).build());
-        this.addRenderableWidget(Button.builder(Component.literal("Resume Game"), btn -> {
-            this.onClose();
-        }).bounds(cx - 40, controlY + 170, 80, 20).build());
+        }
     }
 
     private void scanSchematicFiles() {
         schematicFiles.clear();
         Minecraft mc = Minecraft.getInstance();
-        File schematicsDir = new File(mc.gameDirectory, "schematics");
-        if (!schematicsDir.exists()) {
-            schematicsDir.mkdirs();
-        }
-        if (schematicsDir.isDirectory()) {
-            File[] files = schematicsDir.listFiles((dir, name) -> name.endsWith(".litematic"));
-            if (files != null) {
-                for (File f : files) {
-                    if (f.isFile()) {
-                        schematicFiles.add(f);
-                    }
-                }
-            }
+        File dir = new File(mc.gameDirectory, "schematics");
+        if (!dir.exists()) dir.mkdirs();
+        if (dir.isDirectory()) {
+            File[] files = dir.listFiles((d, n) -> n.endsWith(".litematic"));
+            if (files != null) for (File f : files) if (f.isFile()) schematicFiles.add(f);
         }
     }
 
     @Override
-    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        super.render(g, mouseX, mouseY, partialTick);
-        g.drawCenteredString(this.font, Component.literal("Better Schematics v0.3"), this.width / 2, 10, 0xFFFFFFFF);
+    public void render(GuiGraphics g, int mx, int my, float pt) {
+        super.render(g, mx, my, pt);
+        g.drawCenteredString(this.font, Component.literal("Better Schematics v0.3"), this.width / 2, 8, 0xFFFFFFFF);
 
         if (schematicFiles.isEmpty()) {
-            int cx = this.width / 2;
-            int cy = this.height / 2;
-            g.drawCenteredString(this.font, Component.literal("No .litematic files found!"), cx, cy - 50, 0xFFFF5555);
-            Minecraft mc = Minecraft.getInstance();
-            File sd = new File(mc.gameDirectory, "schematics");
-            g.drawCenteredString(this.font, Component.literal("Place files in: " + sd.getAbsolutePath()), cx, cy - 35, 0xFFAAAAAA);
+            g.drawCenteredString(this.font, Component.literal("Brak .litematic plikaw! Wruc je do folderu schematics bezpofrodnio wdpisz listee materianuw."), this.width / 2, this.height / 2, xxFFFFFFFF);
         }
 
         if (manager.hasSchematic()) {
