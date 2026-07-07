@@ -19,7 +19,6 @@ public class SchematicManager {
     private boolean layerMode = false;
     private int currentLayerMin = 0;
     private int currentLayerMax = 255;
-    private BlockPos nextBlockTarget;
     private final ProgressTracker progressTracker = new ProgressTracker();
 
     public SchematicData getActiveSchematic() { return schematic; }
@@ -39,7 +38,6 @@ public class SchematicManager {
     public int getCurrentLayerMax() { return currentLayerMax; }
     public void setCurrentLayerMax(int l) { currentLayerMax = l; }
     public ProgressTracker getProgressTracker() { return progressTracker; }
-    public BlockPos getNextBlockTarget() { return nextBlockTarget; }
 
     public boolean loadSchematic(File file) {
         try {
@@ -52,7 +50,7 @@ public class SchematicManager {
             BetterSchematics.LOGGER.info("Loaded schematic {} ({} blocks) at {}", r != null ? r.name : "?", blocks, placementOrigin);
             if (mc.player != null) {
                 mc.player.displayClientMessage(
-                    Component.literal("\u017Bechtem\u004Dat wczytany! Klawisze G aby umieSci\u0105ch\u0147 wszystkie bloki."), false);
+                    Component.literal("\u017BSchemat wczytany! U\u017Cyj wireframe jako przewodnik do manualnego budowania."), false);
             }
             return true;
         } catch (IOException e) {
@@ -83,53 +81,6 @@ public class SchematicManager {
     public void shiftLayerDown() {
         currentLayerMin = Math.max(currentLayerMin - 1, 0);
         currentLayerMax = Math.max(currentLayerMax - 1, 0);
-    }
-
-    public void placeAllBlocks() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null || mc.player == null || schematic == null) {
-            BetterSchematics.LOGGER.warn("Placement skipped");
-            return;
-        }
-        SchematicRegion r = schematic.getMainRegion();
-        if (r == null) return;
-        BlockPos s = r.size;
-        boolean isCreative = mc.player.getAbilities().instabuild;
-        int placed = 0;
-        int skipped = 0;
-        
-        for (int y = currentLayerMin; y <= currentLayerMax; y++) {
-            for (int x = 0; x < s.getX(); x++) {
-                for (int z = 0; z < s.getZ(); z++) {
-                    BlockState expected = r.getBlockState(new BlockPos(x, y, z));
-                    if (expected == null || expected.isAir()) continue;
-                    BlockPos wp = transformPos(new BlockPos(x, y, z));
-                    BlockState actual = mc.level.getBlockState(wp);
-                    if (!expected.equals(actual)) {
-                        if (isCreative) {
-                            mc.level.setBlock(wp, expected, 3);
-                            placed++;
-                        } else {
-                            skipped++;
-                        }
-                    }
-                }
-            }
-        }
-
-        if (skipped > 0 && placed == 0) {
-            mc.player.displayClientMessage(
-                Component.literal("\u017BAby umieScic\u0105h\u0147 wszystkie bloki, u\u017Cyj trybu Kreatywny! Pomini\u0119to " + skipped + " blok\u00F3w."), false);
-            return;
-        }
-        
-        if (placed > 0) {
-            mc.player.displayClientMessage(
-                Component.literal("\u017BUmieszczono " + placed + " blok\u00F3w!"), false);
-        } else {
-            mc.player.displayClientMessage(
-                Component.literal("\u017BWszystkie bloki u\u017C leH\u017E od pophrzedniego za\u0143adowania schematu!"), false);
-        }
     }
 
     public BlockPos transformPos(BlockPos local) {
