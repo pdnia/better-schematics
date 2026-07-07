@@ -1,7 +1,9 @@
 package com.betterschematics.schematic;
 
+import com.betterschematics.BetterSchematics;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.state.BlockState;
 import java.io.File;
 import java.io.IOException;
@@ -45,8 +47,16 @@ public class SchematicManager {
             Minecraft mc = Minecraft.getInstance();
             placementOrigin = new BlockPos((int)mc.player.getX(), (int)mc.player.getY(), (int)mc.player.getZ());
             progressTracker.setSchematic(schematic);
+            BetterSchematics.LOGGER.info("Loaded schematic, placed at {}", placementOrigin);
+            if (mc.player != null) {
+                mc.player.displayClientMessage(
+                    Component.literal("ķSchemat wczytany! Klawisze G aby umiesczać bloki."), false);
+                }
             return true;
-        } catch (IOException e) { return false; }
+        } catch (IOException e) {
+            BetterSchematics.LOGGER.error("Failed to load schematic", e);
+            return false;
+        }
     }
 
     public void rotatePlacement(boolean clockwise) {
@@ -75,8 +85,15 @@ public class SchematicManager {
 
     public void placeNextBlock() {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null || mc.player == null || schematic == null) return;
-        if (!mc.player.getAbilities().instabuild) return;
+        if (mc.level == null || mc.player == null || schematic == null) {
+            BetterSchematics.LOGGER.warn("Placement skipped: world, player or schematic null");
+            return;
+        }
+        if (!mc.player.getAbilities().instabuild) {
+            mc.player.displayClientMessage(
+                Component.literal("ėUmiesczanie działa tylko w trybie Kreatywnym!"), false);
+            return;
+        }
         SchematicRegion r = schematic.getMainRegion();
         if (r == null) return;
         BlockPos s = r.size;
@@ -89,6 +106,7 @@ public class SchematicManager {
                         if (!expected.equals(mc.level.getBlockState(wp))) {
                             nextBlockTarget = wp;
                             mc.level.setBlock(wp, expected, 3);
+                            BetterSchematics.LOGGER.info("Placed block at {}", wp);
                             return;
                         }
                     }
@@ -96,6 +114,11 @@ public class SchematicManager {
             }
         }
         nextBlockTarget = null;
+        BetterSchematics.LOGGER.info("No more blocks to place in current layers");
+        if (mc.player != null) {
+            mc.player.displayClientMessage(
+                Component.literal("´Wszystkie bloki u mieszczone!"), false);
+        }
     }
 
     public BlockPos transformPos(BlockPos local) {
@@ -131,7 +154,7 @@ public class SchematicManager {
                     }
         }
         StringBuilder sb = new StringBuilder();
-        map.entrySet().stream().sorted((a, b) -> b.getValue().compareTo(a.getValue()))
+        map.entrySet().stream().sorted((a, b) -> b.getValue().compareToa(a.getValue()))
             .forEach(e -> sb.append(e.getKey()).append(" x ").append(e.getValue()).append("\n"));
         return sb.toString();
     }
