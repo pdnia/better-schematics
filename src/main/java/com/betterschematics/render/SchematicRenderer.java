@@ -3,6 +3,7 @@ package com.betterschematics.render;
 import com.betterschematics.schematic.SchematicData;
 import com.betterschematics.schematic.SchematicManager;
 import com.betterschematics.schematic.SchematicRegion;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
@@ -37,7 +38,10 @@ public class SchematicRenderer {
         if (mc.level == null) return;
 
         Vec3 camPos = camera.position();
-        Matrix4f mat = new Matrix4f(); // identity - pipeline handles view-projection
+        PoseStack poseStack = new PoseStack();
+        poseStack.mulPose(camera.rotation());
+        poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
+        Matrix4f mat = poseStack.last().pose();
 
         SchematicRegion region = data.getMainRegion();
         if (region == null) return;
@@ -53,12 +57,9 @@ public class SchematicRenderer {
         int maxY = Math.max(origin.getY(), endPos.getY())+1;
         int maxZ = Math.max(origin.getZ(), endPos.getZ())+1;
 
-        // Outline box
+        // Outline box (world coords, matrix handles camera transform)
         VertexConsumer outlineVc = buffers.getBuffer(LINES_TYPE);
-        addWireframeBox(outlineVc, mat,
-            (float)(minX - camPos.x), (float)(minY - camPos.y), (float)(minZ - camPos.z),
-            (float)(maxX - camPos.x), (float)(maxY - camPos.y), (float)(maxZ - camPos.z),
-            1f, 1f, 0.867f, 0.5f);
+        addWireframeBox(outlineVc, mat, minX, minY, minZ, maxX, maxY, maxZ, 1f, 1f, 0.867f, 0.5f);
         buffers.endBatch(LINES_TYPE);
 
         // Per-block wireframes
@@ -72,10 +73,8 @@ public class SchematicRenderer {
                     BlockPos worldPos = manager.transformPos(local);
                     BlockState actual = mc.level.getBlockState(worldPos);
                     boolean match = expected.equals(actual);
-                    float wx1 = (float)(worldPos.getX() - camPos.x);
-                    float wy1 = (float)(worldPos.getY() - camPos.y);
-                    float wz1 = (float)(worldPos.getZ() - camPos.z);
-                    addWireframeBox(vc, mat, wx1, wy1, wz1, wx1+1, wy1+1, wz1+1,
+                    addWireframeBox(vc, mat, worldPos.getX(), worldPos.getY(), worldPos.getZ(),
+                            worldPos.getX()+1, worldPos.getY()+1, worldPos.getZ()+1,
                             0f, match?0.4f:0f, match?0f:0.4f, 0.4f);
                 }
         buffers.endBatch(LINES_TYPE);
