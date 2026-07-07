@@ -11,7 +11,10 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.rendertype.RenderSetup;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -21,6 +24,11 @@ public class SchematicRenderer {
     private final SchematicManager manager;
     private boolean renderEnabled = true;
 
+    private static final RenderType LINES_TYPE = RenderType.create(
+        "betterschematics:lines",
+        RenderSetup.builder(RenderPipelines.LINES).createRenderSetup()
+    );
+
     public SchematicRenderer(SchematicManager manager) { this.manager = manager; }
     public void toggleRender() { renderEnabled = !renderEnabled; }
     public boolean isRenderEnabled() { return renderEnabled; }
@@ -28,8 +36,9 @@ public class SchematicRenderer {
     public void render(Camera camera) {
         if (!renderEnabled) return;
         SchematicData data = manager.getActiveSchematic();
+        if (data == null) return;
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null || mc.player == null) return;
+        if (mc.level == null) return;
 
         Vec3 camPos = camera.position();
         PoseStack poseStack = new PoseStack();
@@ -37,14 +46,11 @@ public class SchematicRenderer {
         poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
         Matrix4f mat = poseStack.last().pose();
 
-        // TEST: giant red cross at player, must be visible from any angle
-        renderTestCross(mat, mc, camPos);
-
-        if (data == null) return;
         SchematicRegion region = data.getMainRegion();
         if (region == null) return;
         BlockPos size = region.size;
 
+        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         BlockPos origin = manager.getPlacementOrigin();
         BlockPos endPos = manager.transformPos(new BlockPos(size.getX()-1, size.getY()-1, size.getZ()-1));
         int minX = Math.min(origin.getX(), endPos.getX());
@@ -54,12 +60,12 @@ public class SchematicRenderer {
         int maxY = Math.max(origin.getY(), endPos.getY())+1;
         int maxZ = Math.max(origin.getZ(), endPos.getZ())+1;
 
-        Tesselator t = Tesselator.getInstance();
-        BufferBuilder outlineBuf = t.begin(VertexFormat.Mode.LINE_STRIP, RenderType.lineStrip().format());
-        addWireframeBox(outlineBuf, mat, minX, minY, minZ, maxX, maxY, maxZ, 1f, 1f, 0.867f, 0.5f);
-        RenderType.lineStrip().draw(outlineBuf.buildOrThrow());
+        // Outline box - DON'T call endBatch, let render pass handle it
+        VertexConsumer outlineVc = buffers.getBuffer(LINES_TYPE);
+        addWireframeBox(outlineVc, mat, minX, minY, minZ, maxX, maxY, maxZ, 1f, 1f, 0.867f, 0.5f);
 
-        BufferBuilder blockBuf = t.begin(VertexFormat.Mode.LINES, RenderType.lines().format());
+        // Per-block wireframes
+        VertexConsumer vc = buffers.getBuffer(LINES_TYPE);
         for (int y = 0; y < size.getY(); y++)
             for (int z = 0; z < size.getZ(); z++)
                 for (int x = 0; x < size.getX(); x++) {
@@ -69,24 +75,10 @@ public class SchematicRenderer {
                     BlockPos worldPos = manager.transformPos(local);
                     BlockState actual = mc.level.getBlockState(worldPos);
                     boolean match = expected.equals(actual);
-                    addWireframeBox(blockBuf, mat, worldPos.getX(), worldPos.getY(), worldPos.getZ(),
+                    addWireframeBox(vc, mat, worldPos.getX(), worldPos.getY(), worldPos.getZ(),
                             worldPos.getX()+1, worldPos.getY()+1, worldPos.getZ()+1,
                             0f, match?0.4f:0f, match?0f:0.4f, 0.4f);
                 }
-        RenderType.lines().draw(blockBuf.buildOrThrow());
-    }
-
-    private void renderTestCross(Matrix4f mat, Minecraft mc, Vec3 camPos) {
-        float px = (float)(mc.player.getX() - camPos.x);
-        float py = (float)(mc.player.getY() - camPos.y + 2);
-        float pz = (float)(mc.player.getZ() - camPos.z);
-        Tesselator t = Tesselator.getInstance();
-        BufferBuilder b = t.begin(VertexFormat.Mode.LINES, RenderType.lines().format());
-        // Big red X and vertical line (20 x20 blocks)
-        addLine(b, mat, px-10, py, pz-10, px+10, py, pz+10, 1f, 0f, 0f, 1f);
-        addLine(b, mat, px-10, py, pz+10, px+10, py, pz-10, 1f, 0f, 0f, 1f);
-        addLine(b, mat, px, py, pz, px, py+20, pz, 1f, 0f, 0f, 1f);
-        RenderType.lines().draw(b.buildOrThrow());
     }
 
     private void addWireframeBox(VertexConsumer vc, Matrix4f mat,
