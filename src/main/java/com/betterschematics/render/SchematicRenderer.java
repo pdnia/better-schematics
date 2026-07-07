@@ -33,7 +33,6 @@ public class SchematicRenderer {
     public void toggleRender() { renderEnabled = !renderEnabled; }
     public boolean isRenderEnabled() { return renderEnabled; }
 
-    /** Both Pre and Post use the same build logic */
     public void render(Camera camera) {
         if (!renderEnabled) return;
         SchematicData data = manager.getActiveSchematic();
@@ -60,25 +59,13 @@ public class SchematicRenderer {
         int maxY = Math.max(origin.getY(), end.getY())+1;
         int maxZ = Math.max(origin.getZ(), end.getZ())+1;
 
-        // Build all wireframes using Tesselator directly
         Tesselator t = Tesselator.getInstance();
         BufferBuilder bb = t.begin(VertexFormat.Mode.LINES, GHOST_LINES.format());
-        buildAllWireframes(bb, mat, minX, minY, minZ, maxX, maxY, maxZ, size, region, mc);
-        MeshData mesh = bb.buildOrThrow();
 
-        // Draw without depth test - always visible through walls
-        RenderSystem.disableDepthTest();
-        GHOST_LINES.draw(mesh);
-        RenderSystem.enableDepthTest();
-    }
-
-    private void buildAllWireframes(VertexConsumer vc, Matrix4f mat,
-                                     int minX, int minY, int minZ, int maxX, int maxY, int maxZ,
-                                     BlockPos size, SchematicRegion region, Minecraft mc) {
         // Outline box - orange
-        addWireframeBox(vc, mat, minX, minY, minZ, maxX, maxY, maxZ, 1f, 0.8f, 0.2f, 0.8f);
+        addWireframeBox(bb, mat, minX, minY, minZ, maxX, maxY, maxZ, 1f, 0.8f, 0.2f, 0.8f);
 
-        // Per-block wireframes - green/red
+        // Per-block wireframes - material colors
         for (int y = 0; y < size.getY(); y++)
             for (int z = 0; z < size.getZ(); z++)
                 for (int x = 0; x < size.getX(); x++) {
@@ -88,10 +75,22 @@ public class SchematicRenderer {
                     BlockPos wp = manager.transformPos(local);
                     BlockState actual = mc.level.getBlockState(wp);
                     boolean match = expected.equals(actual);
-                    addWireframeBox(vc, mat, wp.getX(), wp.getY(), wp.getZ(),
-                            wp.getX()+1, wp.getY()+1, wp.getZ()+1,
-                            0f, match?0.8f:0f, match?0f:0.8f, 0.5f);
+
+                    // Material color from block's map color
+                    int color = expected.getMapColor(mc.level, wp).col;
+                    float r = ((color >> 16) & 0xFF) / 255f;
+                    float g = ((color >> 8) & 0xFF) / 255f;
+                    float b = (color & 0xFF) / 255f;
+                    // Missing blocks bright, existing dim
+                    float alpha = match ? 0.12f : 0.65f;
+                    addWireframeBox(bb, mat, wp.getX(), wp.getY(), wp.getZ(),
+                            wp.getX()+1, wp.getY()+1, wp.getZ()+1, r, g, b, alpha);
                 }
+
+        MeshData mesh = bb.buildOrThrow();
+        RenderSystem.disableDepthTest();
+        GHOST_LINES.draw(mesh);
+        RenderSystem.enableDepthTest();
     }
 
     private void addWireframeBox(VertexConsumer vc, Matrix4f mat,
