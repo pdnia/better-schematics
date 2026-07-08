@@ -39,6 +39,16 @@ public class SchematicManager {
     public void setCurrentLayerMax(int l) { currentLayerMax = l; }
     public ProgressTracker getProgressTracker() { return progressTracker; }
 
+    public void nudgeOrigin(int dx, int dy, int dz) {
+        placementOrigin = placementOrigin.offset(dx, dy, dz);
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null) {
+            mc.player.displayClientMessage(
+                Component.literal("Schemat: " + placementOrigin.getX() + ", " + placementOrigin.getY() + ", " + placementOrigin.getZ()),
+                true);
+        }
+    }
+
     public boolean loadSchematic(File file) {
         try {
             schematic = SchematicData.load(file);
@@ -50,7 +60,8 @@ public class SchematicManager {
             BetterSchematics.LOGGER.info("Loaded schematic {} ({} blocks) at {}", r != null ? r.name : "?", blocks, placementOrigin);
             if (mc.player != null) {
                 mc.player.displayClientMessage(
-                    Component.literal("\u017BSchemat wczytany! U\u017Cyj wireframe jako przewodnik do manualnego budowania."), false);
+                    Component.literal("\u00A7eSchemat wczytany! \u00A7fStrzalkami przesuwasz, R=toggle siatki, M=menu."),
+                    false);
             }
             return true;
         } catch (IOException e) {
