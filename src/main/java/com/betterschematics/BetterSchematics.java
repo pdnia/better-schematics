@@ -9,6 +9,7 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraftforge.client.event.RenderGuiLayerEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
@@ -32,7 +33,8 @@ public class BetterSchematics {
 
         RegisterKeyMappingsEvent.BUS.addListener(BetterSchematicsConfig::registerKeys);
         InputEvent.Key.BUS.addListener(this::onKeyInput);
-        TickEvent.RenderTickEvent.Pre.BUS.addListener(this::onRenderTick);
+        TickEvent.RenderTickEvent.Post.BUS.addListener(this::onRenderTick);
+        RenderGuiLayerEvent.Post.BUS.addListener(this::onRenderGui);
     }
 
     public static BetterSchematics getInstance() { return instance; }
@@ -44,6 +46,9 @@ public class BetterSchematics {
         if (Minecraft.getInstance().player == null) return;
         while (BetterSchematicsConfig.openGuiKey.consumeClick()) {
             Minecraft.getInstance().setScreen(new SchematicScreen());
+        }
+        while (BetterSchematicsConfig.executePlaceKey.consumeClick()) {
+            schematicManager.placeNextBlock();
         }
         while (BetterSchematicsConfig.toggleRenderKey.consumeClick()) {
             renderer.toggleRender();
@@ -68,9 +73,15 @@ public class BetterSchematics {
         }
     }
 
-    private void onRenderTick(TickEvent.RenderTickEvent.Pre event) {
+    private void onRenderTick(TickEvent.RenderTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null) return;
-        renderer.render(mc.gameRenderer.getMainCamera());
+        renderer.render(mc.gameRenderer.getMainCamera(), event.renderTickTime);
+    }
+
+    private void onRenderGui(RenderGuiLayerEvent.Post event) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || mc.player == null) return;
+        hudOverlay.render(event.getGuiGraphics(), event.getPartialTick());
     }
 }
