@@ -29,7 +29,6 @@ public class SchematicRenderer {
     public void toggleRender() { renderEnabled = !renderEnabled; }
     public boolean isRenderEnabled() { return renderEnabled; }
 
-    /** Stable hash-based color - safe, won't crash */
     private static float[] colorFor(BlockState bs) {
         int h = bs.getBlock().getDescriptionId().hashCode();
         return new float[]{
@@ -70,7 +69,7 @@ public class SchematicRenderer {
         VertexConsumer vc = buffers.getBuffer(GHOST_LINES);
 
         // Gold outline box
-        addWireframeBox(vc, mat, minX, minY, minZ, maxX, maxY, maxZ, 1f, 0.85f, OF, 0.9f);
+        addWireframeBox(vc, mat, minX, minY, minZ, maxX, maxY, maxZ, 1f, 0.85f, 0f, 0.9f);
 
         // Per-block wireframes
         for (int y = 0; y < size.getY(); y++)
