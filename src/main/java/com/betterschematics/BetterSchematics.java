@@ -11,6 +11,7 @@ import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 
 @Mod("betterschematics")
@@ -52,6 +53,17 @@ public class BetterSchematics {
         }
         while (BetterSchematicsConfig.layerDownKey.consumeClick()) {
             schematicManager.shiftLayerDown();
+        }
+        // Nudge with arrow keys
+        if (event.getAction() == GLFW.GLFW_PRESS) {
+            switch (event.getKey()) {
+                case GLFW.GLFW_KEY_LEFT:  schematicManager.nudgeOrigin(-1, 0, 0); break;
+                case GLFW.GLFW_KEY_RIGHT: schematicManager.nudgeOrigin(1, 0, 0); break;
+                case GLFW.GLFW_KEY_PAGE_UP:  schematicManager.nudgeOrigin(0, 1, 0); break;
+                case GLFW.GLFV_KEY_PAGE_DOWN:schematicManager.nudgeOrigin(0, -1, 0); break;
+                case GLFW.GLFW_KEY_HOME:  schematicManager.nudgeOrigin(0, 0, -1); break;
+                case GLFW.GLFW_KEY_END:   schematicManager.nudgeOrigin(0, 0, 1); break;
+            }
         }
     }
 
