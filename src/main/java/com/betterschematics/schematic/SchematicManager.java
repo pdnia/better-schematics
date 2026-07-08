@@ -1,9 +1,7 @@
 package com.betterschematics.schematic;
 
-import com.betterschematics.BetterSchematics;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.state.BlockState;
 import java.io.File;
 import java.io.IOException;
@@ -19,6 +17,7 @@ public class SchematicManager {
     private boolean layerMode = false;
     private int currentLayerMin = 0;
     private int currentLayerMax = 255;
+    private BlockPos nextBlockTarget;
     private final ProgressTracker progressTracker = new ProgressTracker();
 
     public SchematicData getActiveSchematic() { return schematic; }
@@ -38,46 +37,16 @@ public class SchematicManager {
     public int getCurrentLayerMax() { return currentLayerMax; }
     public void setCurrentLayerMax(int l) { currentLayerMax = l; }
     public ProgressTracker getProgressTracker() { return progressTracker; }
-
-    public void nudgeOrigin(int dx, int dy, int dz) {
-        placementOrigin = placementOrigin.offset(dx, dy, dz);
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player != null) {
-            mc.player.displayClientMessage(
-                Component.literal("Schemat: " + placementOrigin.getX() + ", " + placementOrigin.getY() + ", " + placementOrigin.getZ()),
-                true);
-        }
-    }
-
-    public void lockToPlayer() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player != null) {
-            placementOrigin = new BlockPos((int)mc.player.getX(), (int)mc.player.getY()+1, (int)mc.player.getZ());
-            mc.player.displayClientMessage(
-                Component.literal("\u00A7bZALOKANO w: " + placementOrigin.getX() + ", " + placementOrigin.getY() + ", " + placementOrigin.getZ()),
-                false);
-        }
-    }
+    public BlockPos getNextBlockTarget() { return nextBlockTarget; }
 
     public boolean loadSchematic(File file) {
         try {
             schematic = SchematicData.load(file);
             Minecraft mc = Minecraft.getInstance();
-            placementOrigin = new BlockPos((int)mc.player.getX(), (int)mc.player.getY()+1, (int)mc.player.getZ());
+            placementOrigin = new BlockPos((int)mc.player.getX(), (int)mc.player.getY(), (int)mc.player.getZ());
             progressTracker.setSchematic(schematic);
-            SchematicRegion r = schematic.getMainRegion();
-            int blocks = r != null ? (int) r.getNonAirBlocks() : 0;
-            BetterSchematics.LOGGER.info("Loaded schematic {} ({} blocks) at {}", r != null ? r.name : "?", blocks, placementOrigin);
-            if (mc.player != null) {
-                mc.player.displayClientMessage(
-                    Component.literal("\u00A7eSchemat wczytany! \u00A7fStnzalkami przesuwasz, R=toggle siatki, M=menu, L=zablokuj w miejscu."),
-                    false);
-            }
             return true;
-        } catch (IOException e) {
-            BetterSchematics.LOGGER.error("Failed to load schematic", e);
-            return false;
-        }
+        } catch (IOException e) { return false; }
     }
 
     public void rotatePlacement(boolean clockwise) {
@@ -102,6 +71,45 @@ public class SchematicManager {
     public void shiftLayerDown() {
         currentLayerMin = Math.max(currentLayerMin - 1, 0);
         currentLayerMax = Math.max(currentLayerMax - 1, 0);
+    }
+
+    /** Przesuwa origin schematu o podany wektor */
+    public void nudgeOrigin(int dx, int dy, int dz) {
+        placementOrigin = placementOrigin.offset(dx, dy, dz);
+    }
+
+    /** Blokuje origin do aktualnej pozycji gracza */
+    public void lockToPlayer() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null) {
+            placementOrigin = new BlockPos((int)mc.player.getX(), (int)mc.player.getY(), (int)mc.player.getZ());
+        }
+    }
+
+    public void placeNextBlock() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || mc.player == null || schematic == null) return;
+        if (!mc.player.getAbilities().instabuild) return;
+        SchematicRegion r = schematic.getMainRegion();
+        if (r == null) return;
+        BlockPos s = r.size;
+        for (int y = currentLayerMin; y <= currentLayerMax; y++) {
+            for (int x = 0; x < s.getX(); x++) {
+                for (int z = 0; z < s.getZ(); z++) {
+                    BlockState expected = r.getBlockState(new BlockPos(x, y, z));
+                    if (expected != null && !expected.isAir()) {
+                        BlockPos wp = transformPos(new BlockPos(x, y, z));
+                        if (!expected.equals(mc.level.getBlockState(wp))) {
+                            nextBlockTarget = wp;
+                            mc.level.setBlock(wp, expected, 3);
+                            progressTracker.markPlaced(wp);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+        nextBlockTarget = null;
     }
 
     public BlockPos transformPos(BlockPos local) {
