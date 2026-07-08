@@ -47,9 +47,6 @@ public class BetterSchematics {
         while (BetterSchematicsConfig.openGuiKey.consumeClick()) {
             Minecraft.getInstance().setScreen(new SchematicScreen());
         }
-        while (BetterSchematicsConfig.executePlaceKey.consumeClick()) {
-            schematicManager.placeNextBlock();
-        }
         while (BetterSchematicsConfig.toggleRenderKey.consumeClick()) {
             renderer.toggleRender();
         }
