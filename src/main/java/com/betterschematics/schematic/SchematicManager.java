@@ -49,6 +49,16 @@ public class SchematicManager {
         }
     }
 
+    public void lockToPlayer() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null) {
+            placementOrigin = new BlockPos((int)mc.player.getX(), (int)mc.player.getY()+1, (int)mc.player.getZ());
+            mc.player.displayClientMessage(
+                Component.literal("\u00A7bZALOKANO w: " + placementOrigin.getX() + ", " + placementOrigin.getY() + ", " + placementOrigin.getZ()),
+                false);
+        }
+    }
+
     public boolean loadSchematic(File file) {
         try {
             schematic = SchematicData.load(file);
@@ -60,7 +70,7 @@ public class SchematicManager {
             BetterSchematics.LOGGER.info("Loaded schematic {} ({} blocks) at {}", r != null ? r.name : "?", blocks, placementOrigin);
             if (mc.player != null) {
                 mc.player.displayClientMessage(
-                    Component.literal("\u00A7eSchemat wczytany! \u00A7fStrzalkami przesuwasz, R=toggle siatki, M=menu."),
+                    Component.literal("\u00A7eSchemat wczytany! \u00A7fStnzalkami przesuwasz, R=toggle siatki, M=menu, L=zablokuj w miejscu."),
                     false);
             }
             return true;
