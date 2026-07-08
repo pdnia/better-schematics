@@ -41,6 +41,7 @@ public class SchematicRenderer {
         poseStack.mulPose(camera.rotation());
         poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
         Matrix4f mat = poseStack.last().pose();
+        PoseStack.Pose pose = poseStack.last();
 
         SchematicRegion region = data.getMainRegion();
         if (region == null) return;
@@ -58,7 +59,7 @@ public class SchematicRenderer {
         int maxY = Math.max(origin.getY(), endPos.getY())+1;
         int maxZ = Math.max(origin.getZ(), endPos.getZ())+1;
         VertexConsumer outlineVc = buffers.getBuffer(LINES_TYPE);
-        addWireframeBox(outlineVc, mat, minX, minY, minZ, maxX, maxY, maxZ, 1f, 1f, 0.5f, 0.5f);
+        addWireframeBox(outlineVc, pose, mat, minX, minY, minZ, maxX, maxY, maxZ, 1f, 1f, 0.5f, 0.5f);
         buffers.endBatch(LINES_TYPE);
 
         // === COLOR-CODED WIREFRAME PER BLOCK TYPE ===
@@ -73,9 +74,8 @@ public class SchematicRenderer {
                     BlockState actual = mc.level.getBlockState(worldPos);
                     if (expected.equals(actual)) continue;
 
-                    // color from block type hash
                     float[] color = blockColor(expected);
-                    addWireframeBox(vc, mat,
+                    addWireframeBox(vc, pose, mat,
                         worldPos.getX(), worldPos.getY(), worldPos.getZ(),
                         worldPos.getX()+1, worldPos.getY()+1, worldPos.getZ()+1,
                         color[0], color[1], color[2], 0.55f);
@@ -83,7 +83,6 @@ public class SchematicRenderer {
         buffers.endBatch(LINES_TYPE);
     }
 
-    /** Produces a distinct color per block type so you can see what goes where. */
     private static float[] blockColor(BlockState state) {
         int h = state.getBlock().getDescriptionId().hashCode();
         float hue = ((h & 0x7FFFFFFF) % 360) / 360f;
@@ -106,27 +105,27 @@ public class SchematicRenderer {
         }
     }
 
-    private void addWireframeBox(VertexConsumer vc, Matrix4f mat,
+    private void addWireframeBox(VertexConsumer vc, PoseStack.Pose pose, Matrix4f mat,
                                   float x1, float y1, float z1, float x2, float y2, float z2,
                                   float r, float g, float b, float a) {
-        addLine(vc, mat, x1, y1, z1, x2, y1, z1, r, g, b, a);
-        addLine(vc, mat, x2, y1, z1, x2, y1, z2, r, g, b, a);
-        addLine(vc, mat, x2, y1, z2, x1, y1, z2, r, g, b, a);
-        addLine(vc, mat, x1, y1, z2, x1, y1, z1, r, g, b, a);
-        addLine(vc, mat, x1, y2, z1, x2, y2, z1, r, g, b, a);
-        addLine(vc, mat, x2, y2, z1, x2, y2, z2, r, g, b, a);
-        addLine(vc, mat, x2, y2, z2, x1, y2, z2, r, g, b, a);
-        addLine(vc, mat, x1, y2, z2, x1, y2, z1, r, g, b, a);
-        addLine(vc, mat, x1, y1, z1, x1, y2, z1, r, g, b, a);
-        addLine(vc, mat, x2, y1, z1, x2, y2, z1, r, g, b, a);
-        addLine(vc, mat, x2, y1, z2, x2, y2, z2, r, g, b, a);
-        addLine(vc, mat, x1, y1, z2, x1, y2, z2, r, g, b, a);
+        addLine(vc, pose, mat, x1, y1, z1, x2, y1, z1, r, g, b, a);
+        addLine(vc, pose, mat, x2, y1, z1, x2, y1, z2, r, g, b, a);
+        addLine(vc, pose, mat, x2, y1, z2, x1, y1, z2, r, g, b, a);
+        addLine(vc, pose, mat, x1, y1, z2, x1, y1, z1, r, g, b, a);
+        addLine(vc, pose, mat, x1, y2, z1, x2, y2, z1, r, g, b, a);
+        addLine(vc, pose, mat, x2, y2, z1, x2, y2, z2, r, g, b, a);
+        addLine(vc, pose, mat, x2, y2, z2, x1, y2, z2, r, g, b, a);
+        addLine(vc, pose, mat, x1, y2, z2, x1, y2, z1, r, g, b, a);
+        addLine(vc, pose, mat, x1, y1, z1, x1, y2, z1, r, g, b, a);
+        addLine(vc, pose, mat, x2, y1, z1, x2, y2, z1, r, g, b, a);
+        addLine(vc, pose, mat, x2, y1, z2, x2, y2, z2, r, g, b, a);
+        addLine(vc, pose, mat, x1, y1, z2, x1, y2, z2, r, g, b, a);
     }
 
-    private void addLine(VertexConsumer vc, Matrix4f mat,
+    private void addLine(VertexConsumer vc, PoseStack.Pose pose, Matrix4f mat,
                          float x1, float y1, float z1, float x2, float y2, float z2,
                          float r, float g, float b, float a) {
-        vc.addVertex(mat, x1, y1, z1).setColor(r, g, b, a);
-        vc.addVertex(mat, x2, y2, z2).setColor(r, g, b, a);
+        vc.addVertex(mat, x1, y1, z1).setColor(r, g, b, a).setNormal(pose, 0, 1, 0).setLineWidth(1.0f);
+        vc.addVertex(mat, x2, y2, z2).setColor(r, g, b, a).setNormal(pose, 0, 1, 0).setLineWidth(1.0f);
     }
 }
