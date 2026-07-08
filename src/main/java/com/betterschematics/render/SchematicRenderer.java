@@ -29,6 +29,17 @@ public class SchematicRenderer {
     public void toggleRender() { renderEnabled = !renderEnabled; }
     public boolean isRenderEnabled() { return renderEnabled; }
 
+    /** Stable hash-based color - safe, won't crash */
+    private static float[] colorFor(BlockState bs) {
+        int h = bs.getBlock().getDescriptionId().hashCode();
+        return new float[]{
+            ((h & 0xFF) / 255f) * 0.55f + 0.45f,
+            (((h >> 8) & 0xFF) / 255f) * 0.55f + 0.45f,
+            (((h >> 16) & 0xFF) / 255f) * 0.55f + 0.45f,
+            0.7f
+        };
+    }
+
     public void render(Camera camera) {
         if (!renderEnabled) return;
         SchematicData data = manager.getActiveSchematic();
@@ -58,25 +69,22 @@ public class SchematicRenderer {
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         VertexConsumer vc = buffers.getBuffer(GHOST_LINES);
 
-        addWireframeBox(vc, mat, minX, minY, minZ, maxX, maxY, maxZ, 1f, 0.85f, 0f, 0.8f);
+        // Gold outline box
+        addWireframeBox(vc, mat, minX, minY, minZ, maxX, maxY, maxZ, 1f, 0.85f, OF, 0.9f);
 
+        // Per-block wireframes
         for (int y = 0; y < size.getY(); y++)
             for (int z = 0; z < size.getZ(); z++)
                 for (int x = 0; x < size.getX(); x++) {
                     BlockPos local = new BlockPos(x, y, z);
-                    BlockState expected = region.getBlockState(local);
+                    BlockState expected;
+                    try { expected = region.getBlockState(local); }
+                    catch (Exception e) { continue; }
                     if (expected == null || expected.isAir()) continue;
                     BlockPos wp = manager.transformPos(local);
-                    BlockState actual = mc.level.getBlockState(wp);
-                    boolean match = expected.equals(actual);
-
-                    int color = expected.getMapColor(mc.level, wp).col;
-                    float r = ((color >> 16) & 0xFF) / 255f;
-                    float g = ((color >> 8) & 0xFF) / 255f;
-                    float b = (color & 0xFF) / 255f;
-                    float alpha = match ? 0.30f : 0.75f;
+                    float[] c = colorFor(expected);
                     addWireframeBox(vc, mat, wp.getX(), wp.getY(), wp.getZ(),
-                            wp.getX()+1, wp.getY()+1, wp.getZ()+1, r, g, b, alpha);
+                            wp.getX()+1, wp.getY()+1, wp.getZ()+1, c[0], c[1], c[2], c[3]);
                 }
     }
 
