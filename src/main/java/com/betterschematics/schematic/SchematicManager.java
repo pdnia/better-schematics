@@ -149,4 +149,31 @@ public class SchematicManager {
             .forEach(e -> sb.append(e.getKey()).append(" x ").append(e.getValue()).append("\n"));
         return sb.toString();
     }
+
+    /** Paste all missing blocks from the schematic into the world. */
+    public int pasteAllBlocks() {
+        if (schematic == null) return 0;
+        SchematicRegion region = schematic.getMainRegion();
+        if (region == null) return 0;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || mc.player == null) return 0;
+        if (!mc.player.getAbilities().instabuild) return 0;
+        int placed = 0;
+        BlockPos size = region.size;
+        for (int y = 0; y < size.getY(); y++)
+            for (int z = 0; z < size.getZ(); z++)
+                for (int x = 0; x < size.getX(); x++) {
+                    BlockPos local = new BlockPos(x, y, z);
+                    BlockState expected = region.getBlockState(local);
+                    if (expected == null || expected.isAir()) continue;
+                    BlockPos worldPos = transformPos(local);
+                    BlockState actual = mc.level.getBlockState(worldPos);
+                    if (expected.equals(actual)) continue;
+                    mc.level.setBlock(worldPos, expected, 3);
+                    progressTracker.markPlaced(worldPos);
+                    placed++;
+                }
+        return placed;
+    }
+
 }
