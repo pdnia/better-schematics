@@ -79,9 +79,15 @@ public class SchematicScreen extends Screen {
                 materialText = manager.exportMaterialList();
             }
         }).bounds(cx - 40, controlY + 130, 80, 20).build());
+        this.addRenderableWidget(Button.builder(Component.literal("Paste"), btn -> {
+            int placed = manager.pasteAllBlocks();
+            if (placed > 0) {
+                LOGGER.info("[BetterSchematics] Pasted {} blocks!", placed);
+            }
+        }).bounds(cx - 40, controlY + 160, 80, 20).build());
         this.addRenderableWidget(Button.builder(Component.literal("Resume Game"), btn -> {
             this.onClose();
-        }).bounds(cx - 40, controlY + 170, 80, 20).build());
+        }).bounds(cx - 40, controlY + 190, 80, 20).build());
 
         LOGGER.info("[BetterSchematics] init() done, {} children", children().size());
     }
